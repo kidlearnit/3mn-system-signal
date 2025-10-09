@@ -1,0 +1,20 @@
+sma_structure:
+  moving_averages:
+    M1: 18
+    M2: 36
+    M3: 48
+    M_resistance: 144
+  rules:
+    bullish:
+      local_broken: "CP > M1 and M1 > M2 and M2 > M3"
+      local: "local_broken and mean([M1,M2,M3]) > M_resistance"
+      confirmed: "local and higher_tf.local"
+    bearish:
+      local_broken: "CP < M1 and M1 < M2 and M2 < M3"
+      local: "local_broken and mean([M1,M2,M3]) < M_resistance"
+      confirmed: "local and higher_tf.local"
+    neutral:
+      condition: "not bullish.local_broken and not bearish.local_broken"
+  composite_alerts:
+    triple_short_bullish:
+      condition: "1D1.confirmed_bullish and 1D2.confirmed_bullish and 1D5.confirmed_bullish"

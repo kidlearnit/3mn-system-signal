@@ -1,0 +1,445 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Performance Analytics - Trading Signals{% endblock %}
+
+{% block page_title %}Performance Analytics{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-chart-line text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Performance Analytics</h1>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button onclick="exportReport()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-download mr-2"></i>
+            Export Report
+        </button>
+
+        <button onclick="refreshAnalytics()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>
+            Refresh Data
+        </button>
+
+        <button onclick="generateReport()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
+            <i class="fas fa-file-alt mr-2"></i>
+            Generate Report
+        </button>
+    </div>
+</div>
+
+<!-- Time Period Selector -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Time Period</h3>
+    </div>
+    <div class="p-6">
+        <div class="flex flex-wrap gap-3">
+            <button onclick="setTimePeriod('1d')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                1 Day
+            </button>
+            <button onclick="setTimePeriod('7d')"
+                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg">
+                7 Days
+            </button>
+            <button onclick="setTimePeriod('30d')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                30 Days
+            </button>
+            <button onclick="setTimePeriod('90d')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                90 Days
+            </button>
+            <button onclick="setTimePeriod('1y')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                1 Year
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Key Performance Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Return -->
+    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-blue-100 text-sm font-medium">Total Return</p>
+                <p class="text-3xl font-bold">+24.5%</p>
+            </div>
+            <div class="p-3 bg-blue-400 bg-opacity-30 rounded-full">
+                <i class="fas fa-chart-line text-2xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-blue-100">+2.3% this week</span>
+        </div>
+    </div>
+
+    <!-- Win Rate -->
+    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-green-100 text-sm font-medium">Win Rate</p>
+                <p class="text-3xl font-bold">78.5%</p>
+            </div>
+            <div class="p-3 bg-green-400 bg-opacity-30 rounded-full">
+                <i class="fas fa-trophy text-2xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-100">156 wins / 43 losses</span>
+        </div>
+    </div>
+
+    <!-- Sharpe Ratio -->
+    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-purple-100 text-sm font-medium">Sharpe Ratio</p>
+                <p class="text-3xl font-bold">2.34</p>
+            </div>
+            <div class="p-3 bg-purple-400 bg-opacity-30 rounded-full">
+                <i class="fas fa-chart-bar text-2xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-purple-100">Excellent risk-adjusted returns</span>
+        </div>
+    </div>
+
+    <!-- Max Drawdown -->
+    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-red-100 text-sm font-medium">Max Drawdown</p>
+                <p class="text-3xl font-bold">-8.2%</p>
+            </div>
+            <div class="p-3 bg-red-400 bg-opacity-30 rounded-full">
+                <i class="fas fa-arrow-down text-2xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-red-100">Peak to trough decline</span>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Equity Curve -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Equity Curve</h3>
+        </div>
+        <div class="p-6">
+            <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-area text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">Equity curve chart will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drawdown Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Drawdown Analysis</h3>
+        </div>
+        <div class="p-6">
+            <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">Drawdown chart will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Performance Breakdown -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Strategy Performance Breakdown</h3>
+    </div>
+    <div class="p-6">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Strategy</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total
+                            Return</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win
+                            Rate</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Sharpe Ratio</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max
+                            Drawdown</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total
+                            Trades</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-chart-line text-blue-600 text-sm"></i>
+                                </div>
+                                <div class="text-sm font-medium text-gray-900">MACD Trend</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">+28.5%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">82.5%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2.45</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">-6.2%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">156</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-exchange-alt text-green-600 text-sm"></i>
+                                </div>
+                                <div class="text-sm font-medium text-gray-900">RSI Mean Reversion</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">+18.2%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">75.2%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1.89</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">-9.8%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">89</td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                    <i class="fas fa-rocket text-purple-600 text-sm"></i>
+                                </div>
+                                <div class="text-sm font-medium text-gray-900">Momentum Breakout</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">+15.8%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">68.9%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1.67</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">-12.5%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">234</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Performance -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Monthly Performance</h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- January -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">January 2024</h4>
+                    <span class="text-sm text-green-600 font-medium">+5.2%</span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Win Rate:</span>
+                        <span>78%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Trades:</span>
+                        <span>45</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Sharpe:</span>
+                        <span>2.1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- February -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">February 2024</h4>
+                    <span class="text-sm text-green-600 font-medium">+3.8%</span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Win Rate:</span>
+                        <span>82%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Trades:</span>
+                        <span>38</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Sharpe:</span>
+                        <span>2.3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- March -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">March 2024</h4>
+                    <span class="text-sm text-red-600 font-medium">-1.2%</span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Win Rate:</span>
+                        <span>65%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Trades:</span>
+                        <span>52</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Sharpe:</span>
+                        <span>1.2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- April -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">April 2024</h4>
+                    <span class="text-sm text-green-600 font-medium">+7.1%</span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Win Rate:</span>
+                        <span>85%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Trades:</span>
+                        <span>41</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Sharpe:</span>
+                        <span>2.8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- May -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">May 2024</h4>
+                    <span class="text-sm text-green-600 font-medium">+4.6%</span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Win Rate:</span>
+                        <span>79%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Trades:</span>
+                        <span>47</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Sharpe:</span>
+                        <span>2.2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- June -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">June 2024</h4>
+                    <span class="text-sm text-green-600 font-medium">+5.0%</span>
+                </div>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Win Rate:</span>
+                        <span>81%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Trades:</span>
+                        <span>43</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Sharpe:</span>
+                        <span>2.4</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Performance analytics functionality
+    let currentTimePeriod = '7d';
+
+    function setTimePeriod(period) {
+        currentTimePeriod = period;
+
+        // Update button states
+        document.querySelectorAll('button[onclick^="setTimePeriod"]').forEach(btn => {
+            btn.classList.remove('text-white', 'bg-blue-600');
+            btn.classList.add('text-gray-600', 'bg-gray-100');
+        });
+
+        // Set active button
+        event.target.classList.remove('text-gray-600', 'bg-gray-100');
+        event.target.classList.add('text-white', 'bg-blue-600');
+
+        console.log('Time period changed to:', period);
+        refreshAnalytics();
+    }
+
+    function refreshAnalytics() {
+        console.log('Refreshing analytics for period:', currentTimePeriod);
+        showNotification('Refreshing analytics data...', 'info');
+    }
+
+    function exportReport() {
+        console.log('Exporting performance report...');
+        showNotification('Exporting report...', 'info');
+    }
+
+    function generateReport() {
+        console.log('Generating performance report...');
+        showNotification('Generating report...', 'info');
+    }
+
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                    type === 'error' ? 'bg-red-500 text-white' :
+                        'bg-blue-500 text-white'
+            }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function () {
+        // Set default time period
+        setTimePeriod('7d');
+    });
+</script>
+{% endblock %}

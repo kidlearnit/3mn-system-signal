@@ -1,0 +1,593 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Symbol Strategy Configuration - Trading Signals{% endblock %}
+
+{% block page_title %}Symbol Strategy Configuration{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-cogs text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Symbol Strategy Configuration</h1>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button onclick="saveConfiguration()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-save mr-2"></i>
+            Save Configuration
+        </button>
+
+        <button onclick="resetToDefaults()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors">
+            <i class="fas fa-undo mr-2"></i>
+            Reset to Defaults
+        </button>
+
+        <button onclick="testStrategy()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-play mr-2"></i>
+            Test Strategy
+        </button>
+    </div>
+</div>
+
+<!-- Symbol and Strategy Selection -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Select Symbol & Strategy</h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Symbol Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+                <select id="symbolSelect" onchange="loadSymbolConfiguration()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Select Symbol...</option>
+                </select>
+            </div>
+
+            <!-- Strategy Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Strategy</label>
+                <select id="strategySelect" onchange="loadStrategyConfiguration()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Select Strategy...</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Values Display -->
+<div id="currentValuesSection" class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Current Indicator Values</h3>
+    </div>
+    <div class="p-6">
+        <div id="currentValuesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Current values will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Threshold Configuration -->
+<div id="thresholdConfigSection" class="bg-white rounded-xl shadow-sm border border-gray-200 hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Threshold Configuration</h3>
+        <p class="text-sm text-gray-600 mt-1">Configure threshold values for each timeframe and indicator</p>
+    </div>
+    <div class="p-6">
+        <!-- Timeframe Tabs -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTimeframe('1D1Min')" id="tab-1D1Min"
+                    class="py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                    1 Minute
+                </button>
+                <button onclick="switchTimeframe('1D2Min')" id="tab-1D2Min"
+                    class="py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    2 Minutes
+                </button>
+                <button onclick="switchTimeframe('1D5Min')" id="tab-1D5Min"
+                    class="py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    5 Minutes
+                </button>
+                <button onclick="switchTimeframe('1D15Min')" id="tab-1D15Min"
+                    class="py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    15 Minutes
+                </button>
+                <button onclick="switchTimeframe('1D30Min')" id="tab-1D30Min"
+                    class="py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    30 Minutes
+                </button>
+                <button onclick="switchTimeframe('1D1hr')" id="tab-1D1hr"
+                    class="py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    1 Hour
+                </button>
+                <button onclick="switchTimeframe('1D4hr')" id="tab-1D4hr"
+                    class="py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    4 Hours
+                </button>
+            </nav>
+        </div>
+
+        <!-- Threshold Configuration Content -->
+        <div id="thresholdContent">
+            <!-- Content will be loaded dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Test Results Modal -->
+<div id="testResultsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Strategy Test Results</h3>
+            </div>
+            <div class="p-6">
+                <div id="testResultsContent">
+                    <!-- Test results will be loaded here -->
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button onclick="closeTestResults()"
+                    class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global variables
+    let currentSymbol = '';
+    let currentStrategy = '';
+    let currentTimeframe = '1D1Min';
+    let configurationData = {};
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        loadSymbols();
+        loadStrategies();
+    });
+
+    // Load symbols dropdown
+    async function loadSymbols() {
+        try {
+            const response = await fetch('/api/v1/symbols?per_page=1000');
+            const result = await response.json();
+
+            if (result.success) {
+                const symbolSelect = document.getElementById('symbolSelect');
+                symbolSelect.innerHTML = '<option value="">Select Symbol...</option>';
+
+                result.data.items.forEach(symbol => {
+                    const option = document.createElement('option');
+                    option.value = symbol.ticker;
+                    option.textContent = `${symbol.ticker} (${symbol.exchange})`;
+                    symbolSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading symbols:', error);
+            showNotification('Error loading symbols', 'error');
+        }
+    }
+
+    // Load strategies dropdown
+    async function loadStrategies() {
+        try {
+            const response = await fetch('/api/strategies');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const strategySelect = document.getElementById('strategySelect');
+                strategySelect.innerHTML = '<option value="">Select Strategy...</option>';
+
+                result.data.strategies.forEach(strategy => {
+                    const option = document.createElement('option');
+                    option.value = strategy.id;
+                    option.textContent = strategy.name;
+                    strategySelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading strategies:', error);
+            showNotification('Error loading strategies', 'error');
+        }
+    }
+
+    // Load symbol configuration
+    async function loadSymbolConfiguration() {
+        const symbol = document.getElementById('symbolSelect').value;
+        if (!symbol) return;
+
+        currentSymbol = symbol;
+
+        // Load current indicator values
+        await loadCurrentValues();
+
+        // Show current values section
+        document.getElementById('currentValuesSection').classList.remove('hidden');
+    }
+
+    // Load strategy configuration
+    async function loadStrategyConfiguration() {
+        const strategyId = document.getElementById('strategySelect').value;
+        if (!strategyId) return;
+
+        currentStrategy = strategyId;
+
+        // Load strategy thresholds
+        await loadStrategyThresholds();
+
+        // Show threshold configuration section
+        document.getElementById('thresholdConfigSection').classList.remove('hidden');
+    }
+
+    // Load current indicator values
+    async function loadCurrentValues() {
+        if (!currentSymbol) return;
+
+        try {
+            const timeframes = ['1D1Min', '1D2Min', '1D5Min', '1D15Min', '1D30Min', '1D1hr', '1D4hr'];
+            const currentValuesGrid = document.getElementById('currentValuesGrid');
+            currentValuesGrid.innerHTML = '';
+
+            for (const tf of timeframes) {
+                // Load MACD values
+                const macdResponse = await fetch(`/api/real/macd?symbol=${currentSymbol}&timeframe=${tf}&limit=1`);
+                const macdResult = await macdResponse.json();
+
+                if (macdResult.status === 'success' && macdResult.data.macd.length > 0) {
+                    const macdData = macdResult.data.macd[0];
+
+                    const valueCard = document.createElement('div');
+                    valueCard.className = 'bg-gray-50 rounded-lg p-4';
+                    valueCard.innerHTML = `
+                    <h4 class="font-semibold text-gray-900 mb-2">${tf}</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">MACD:</span>
+                            <span class="text-sm font-medium ${macdData.macd >= 0 ? 'text-green-600' : 'text-red-600'}">${macdData.macd.toFixed(4)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Signal:</span>
+                            <span class="text-sm font-medium ${macdData.macd_signal >= 0 ? 'text-green-600' : 'text-red-600'}">${macdData.macd_signal.toFixed(4)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Histogram:</span>
+                            <span class="text-sm font-medium ${macdData.histogram >= 0 ? 'text-green-600' : 'text-red-600'}">${macdData.histogram.toFixed(4)}</span>
+                        </div>
+                    </div>
+                `;
+                    currentValuesGrid.appendChild(valueCard);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading current values:', error);
+        }
+    }
+
+    // Load strategy thresholds
+    async function loadStrategyThresholds() {
+        if (!currentStrategy) return;
+
+        try {
+            const response = await fetch(`/api/strategies/${currentStrategy}`);
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                configurationData = result.data.strategy;
+                loadTimeframeContent('1D1Min');
+            }
+        } catch (error) {
+            console.error('Error loading strategy thresholds:', error);
+            showNotification('Error loading strategy configuration', 'error');
+        }
+    }
+
+    // Switch timeframe tab
+    function switchTimeframe(timeframe) {
+        currentTimeframe = timeframe;
+
+        // Update tab styles
+        document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+            tab.classList.remove('border-blue-500', 'text-blue-600');
+            tab.classList.add('border-transparent', 'text-gray-500');
+        });
+
+        const activeTab = document.getElementById(`tab-${timeframe}`);
+        activeTab.classList.remove('border-transparent', 'text-gray-500');
+        activeTab.classList.add('border-blue-500', 'text-blue-600');
+
+        // Load content for this timeframe
+        loadTimeframeContent(timeframe);
+    }
+
+    // Load timeframe content
+    function loadTimeframeContent(timeframe) {
+        const content = document.getElementById('thresholdContent');
+
+        // Filter thresholds for this timeframe
+        const timeframeThresholds = configurationData.thresholds.filter(t => t.timeframe === timeframe);
+
+        if (timeframeThresholds.length === 0) {
+            content.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-exclamation-triangle text-yellow-500 text-3xl mb-4"></i>
+                <p class="text-gray-600">No thresholds configured for ${timeframe}</p>
+            </div>
+        `;
+            return;
+        }
+
+        // Group by indicator
+        const indicators = {};
+        timeframeThresholds.forEach(threshold => {
+            if (!indicators[threshold.indicator]) {
+                indicators[threshold.indicator] = [];
+            }
+            indicators[threshold.indicator].push(threshold);
+        });
+
+        // Generate content
+        let html = '';
+        Object.keys(indicators).forEach(indicator => {
+            html += `
+            <div class="mb-8">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                    ${indicator} Configuration
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        `;
+
+            indicators[indicator].forEach(threshold => {
+                const zoneColors = {
+                    'igr': 'bg-green-50 border-green-200',
+                    'greed': 'bg-yellow-50 border-yellow-200',
+                    'bull': 'bg-blue-50 border-blue-200',
+                    'pos': 'bg-green-50 border-green-200',
+                    'neutral': 'bg-gray-50 border-gray-200',
+                    'neg': 'bg-red-50 border-red-200',
+                    'bear': 'bg-red-50 border-red-200',
+                    'fear': 'bg-orange-50 border-orange-200',
+                    'panic': 'bg-red-50 border-red-200'
+                };
+
+                const zoneColor = zoneColors[threshold.zone] || 'bg-gray-50 border-gray-200';
+
+                html += `
+                <div class="${zoneColor} rounded-lg p-4 border">
+                    <h5 class="font-medium text-gray-900 mb-3 capitalize">${threshold.zone} Zone</h5>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Comparison</label>
+                            <select class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                data-threshold-id="${threshold.id}" data-field="comparison">
+                                <option value=">=" ${threshold.comparison === '>=' ? 'selected' : ''}>>=</option>
+                                <option value=">" ${threshold.comparison === '>' ? 'selected' : ''}>></option>
+                                <option value="<=" ${threshold.comparison === '<=' ? 'selected' : ''}><=</option>
+                                <option value="<" ${threshold.comparison === '<' ? 'selected' : ''}><</option>
+                                <option value="=" ${threshold.comparison === '=' ? 'selected' : ''}>=</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Min Value</label>
+                            <input type="number" step="0.0001" 
+                                class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                data-threshold-id="${threshold.id}" data-field="min_value"
+                                value="${threshold.min_value || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Max Value</label>
+                            <input type="number" step="0.0001" 
+                                class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                data-threshold-id="${threshold.id}" data-field="max_value"
+                                value="${threshold.max_value || ''}">
+                        </div>
+                    </div>
+                </div>
+            `;
+            });
+
+            html += `
+                </div>
+            </div>
+        `;
+        });
+
+        content.innerHTML = html;
+    }
+
+    // Save configuration
+    async function saveConfiguration() {
+        if (!currentSymbol || !currentStrategy) {
+            showNotification('Please select both symbol and strategy', 'warning');
+            return;
+        }
+
+        try {
+            // Collect all threshold values
+            const thresholds = [];
+            document.querySelectorAll('[data-threshold-id]').forEach(input => {
+                const thresholdId = input.getAttribute('data-threshold-id');
+                const field = input.getAttribute('data-field');
+                const value = input.value;
+
+                let threshold = thresholds.find(t => t.id === thresholdId);
+                if (!threshold) {
+                    threshold = { id: thresholdId, [field]: value };
+                    thresholds.push(threshold);
+                } else {
+                    threshold[field] = value;
+                }
+            });
+
+            // Update thresholds
+            const response = await fetch(`/api/strategies/${currentStrategy}/update-parameters`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    thresholds: thresholds.map(t => ({
+                        threshold_id: t.id,
+                        comparison: t.comparison,
+                        min_value: t.min_value ? parseFloat(t.min_value) : null,
+                        max_value: t.max_value ? parseFloat(t.max_value) : null
+                    }))
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showNotification('Configuration saved successfully!', 'success');
+            } else {
+                showNotification('Error saving configuration: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error saving configuration:', error);
+            showNotification('Error saving configuration', 'error');
+        }
+    }
+
+    // Reset to defaults
+    function resetToDefaults() {
+        if (confirm('Are you sure you want to reset all values to defaults?')) {
+            // Reload strategy configuration
+            loadStrategyThresholds();
+            showNotification('Configuration reset to defaults', 'info');
+        }
+    }
+
+    // Test strategy
+    async function testStrategy() {
+        if (!currentSymbol || !currentStrategy) {
+            showNotification('Please select both symbol and strategy', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/strategies/${currentStrategy}/test`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    symbol: currentSymbol
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showTestResults(result.data);
+            } else {
+                showNotification('Error testing strategy: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error testing strategy:', error);
+            showNotification('Error testing strategy', 'error');
+        }
+    }
+
+    // Show test results
+    function showTestResults(data) {
+        const content = document.getElementById('testResultsContent');
+
+        let html = `
+        <div class="mb-6">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">Test Summary</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold text-blue-600">${data.overall_signal}</div>
+                    <div class="text-sm text-gray-600">Overall Signal</div>
+                </div>
+                <div class="bg-green-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold text-green-600">${data.confidence}%</div>
+                    <div class="text-sm text-gray-600">Confidence</div>
+                </div>
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <div class="text-2xl font-bold text-purple-600">${data.symbol}</div>
+                    <div class="text-sm text-gray-600">Symbol</div>
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">Detailed Results</h4>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeframe</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Indicator</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zone</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Value</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threshold</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition Met</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+    `;
+
+        data.test_results.forEach(result => {
+            const conditionMetClass = result.condition_met ? 'text-green-600' : 'text-red-600';
+            const signalClass = result.signal === 'BUY' ? 'text-green-600' : 'text-red-600';
+
+            html += `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${result.timeframe}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${result.indicator}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${result.zone}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${result.current_value}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${result.threshold_value}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm ${conditionMetClass}">${result.condition_met ? 'Yes' : 'No'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium ${signalClass}">${result.signal}</td>
+            </tr>
+        `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+        content.innerHTML = html;
+        document.getElementById('testResultsModal').classList.remove('hidden');
+    }
+
+    // Close test results
+    function closeTestResults() {
+        document.getElementById('testResultsModal').classList.add('hidden');
+    }
+
+    // Show notification
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                    type === 'error' ? 'bg-red-500 text-white' :
+                        'bg-blue-500 text-white'
+            }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

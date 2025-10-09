@@ -1,0 +1,541 @@
+{% extends "layouts/base.html" %} {% block content %}
+
+<div class="collector-container w-full mx-auto p-6 bg-white shadow rounded-lg">
+  <h2 class="text-lg font-semibold mb-6">Stock Collector</h2>
+
+  <!-- Form thêm symbol -->
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg border">
+    <h3 class="text-sm font-medium mb-3">Thêm mã mới</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      <!-- Thị trường -->
+      <div>
+        <label class="block text-xs font-medium text-gray-600">Thị trường</label>
+        <div class="flex items-center gap-4 mt-2 text-sm">
+          <label class="flex items-center gap-1 cursor-pointer">
+            <input type="radio" name="market" value="vn" class="text-indigo-600" checked />
+            <span>Việt Nam</span>
+          </label>
+          <label class="flex items-center gap-1 cursor-pointer">
+            <input type="radio" name="market" value="us" class="text-indigo-600" />
+            <span>Quốc tế</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Nhập symbol -->
+      <div class="relative">
+        <label for="symbol-input" class="block text-xs font-medium text-gray-600">Mã</label>
+        <input type="text" id="symbol-input" placeholder="Nhập mã (AAPL, MSFT, VNM...)"
+          class="w-full border rounded px-2 py-1 mt-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+        <ul id="symbol-suggestions" class="absolute z-10 mt-1 w-full bg-white border rounded shadow hidden text-sm">
+        </ul>
+      </div>
+
+      <!-- Button -->
+      <div>
+        <button id="addSymbolBtn" class="w-full px-3 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">
+          Thêm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters và Controls -->
+  <div class="mb-4 flex flex-wrap items-center gap-3">
+    <!-- Market Filter -->
+    <div class="flex items-center gap-2">
+      <label class="text-sm font-medium text-gray-600">Lọc theo thị trường:</label>
+      <select id="marketFilter"
+        class="px-3 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+        <option value="all">Tất cả</option>
+        <option value="vn">Việt Nam</option>
+        <option value="us">Quốc tế</option>
+      </select>
+    </div>
+
+    <!-- Search Filter -->
+    <div class="flex items-center gap-2">
+      <label class="text-sm font-medium text-gray-600">Tìm kiếm:</label>
+      <input type="text" id="searchFilter" placeholder="Nhập mã cổ phiếu..."
+        class="px-3 py-1 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-2">
+      <button id="startAllBtn" class="px-4 py-2 rounded bg-green-600 text-white text-sm hover:bg-green-700">
+        Start tất cả
+      </button>
+      <button id="stopAllBtn" class="px-4 py-2 rounded bg-red-600 text-white text-sm hover:bg-red-700">
+        Stop tất cả
+      </button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <pre id="status-box" class="mb-6 p-2 bg-gray-100 border rounded text-xs overflow-y-auto max-h-32">
+Trạng thái collector sẽ hiển thị ở đây...</pre>
+
+  <!-- Test Button -->
+  <div class="mb-4">
+    <button id="testLoadBtn" class="px-4 py-2 rounded bg-purple-600 text-white text-sm hover:bg-purple-700">
+      Test Load Symbols
+    </button>
+  </div>
+
+  <!-- 2 bảng VN + US -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- VN -->
+    <div class="p-3 bg-gray-50 rounded border">
+      <h3 class="text-sm font-medium mb-2">Danh sách mã Việt Nam</h3>
+      <div class="overflow-y-auto max-h-80">
+        <table class="w-full text-xs border-collapse">
+          <thead class="bg-gray-100 text-gray-600">
+            <tr>
+              <th class="px-2 py-2 text-left">Mã</th>
+              <th class="px-2 py-2 text-left">Trạng thái</th>
+              <th class="px-2 py-2 text-left">Thao tác</th>
+              <th class="px-2 py-2 text-left">Xem dữ liệu</th>
+            </tr>
+          </thead>
+          <tbody id="symbols-vn-body" class="divide-y divide-gray-200 bg-white"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- US -->
+    <div class="p-3 bg-gray-50 rounded border">
+      <h3 class="text-sm font-medium mb-2">Danh sách mã Quốc tế</h3>
+      <div class="overflow-y-auto max-h-80">
+        <table class="w-full text-xs border-collapse">
+          <thead class="bg-gray-100 text-gray-600">
+            <tr>
+              <th class="px-2 py-2 text-left">Mã</th>
+              <th class="px-2 py-2 text-left">Trạng thái</th>
+              <th class="px-2 py-2 text-left">Thao tác</th>
+              <th class="px-2 py-2 text-left">Xem dữ liệu</th>
+            </tr>
+          </thead>
+          <tbody id="symbols-us-body" class="divide-y divide-gray-200 bg-white"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const symbolInput = document.getElementById("symbol-input");
+    const suggestionsBox = document.getElementById("symbol-suggestions");
+    const addSymbolBtn = document.getElementById("addSymbolBtn");
+    const startAllBtn = document.getElementById("startAllBtn");
+    const stopAllBtn = document.getElementById("stopAllBtn");
+    const statusBox = document.getElementById("status-box");
+
+    let symbols = []; // Danh sách symbols từ server
+    let filteredSymbols = []; // Danh sách symbols đã lọc
+
+    // Socket initialization - comment out for now to test
+    // const socket = io("/collector");
+    // socket.on("job_status", (jobsStatus) => {
+    //   console.log("job_status socket...", jobsStatus);
+    //   let hasUpdates = false;
+    //   
+    //   symbols.forEach((s) => {
+    //     if (jobsStatus[s.symbol]) {
+    //       const newStatus = jobsStatus[s.symbol];
+    //       if (s.status !== newStatus) {
+    //         s.status = newStatus;
+    //         hasUpdates = true;
+    //         
+    //         // Log status changes
+    //         if (newStatus === "stopping") {
+    //           setStatus(`🟡 ${s.symbol} đang dừng...`, "success", true);
+    //         } else if (newStatus === "stopped") {
+    //           setStatus(`⚫ ${s.symbol} đã dừng hoàn toàn`, "success", true);
+    //         } else if (newStatus === "completed") {
+    //           setStatus(`🔵 ${s.symbol} đã hoàn thành`, "success", true);
+    //         } else if (newStatus === "failed") {
+    //           setStatus(`🔴 ${s.symbol} gặp lỗi`, "error", true);
+    //         }
+    //       }
+    //     }
+    //   });
+    //   
+    //   if (hasUpdates) {
+    //     applyFilters(); // Re-render với trạng thái mới
+    //   }
+    // });
+
+    // Helper function để set status
+    function setStatus(msg, type = "loading", append = false) {
+      statusBox.textContent = append ? statusBox.textContent + "\n" + msg : msg;
+
+      statusBox.className =
+        "mt-4 p-3 rounded-lg text-sm overflow-y-auto max-h-48";
+
+      if (type === "error")
+        statusBox.classList.add("bg-red-100", "text-red-700");
+      else if (type === "success")
+        statusBox.classList.add("bg-green-100", "text-green-700");
+      else statusBox.classList.add("bg-gray-100", "text-gray-700");
+
+      statusBox.scrollTop = statusBox.scrollHeight;
+    }
+
+    // Tải danh sách symbols từ server
+    async function loadSymbols() {
+      try {
+        const res = await fetch("/symbols/list");
+        symbols = await res.json();
+        applyFilters();
+      } catch (err) {
+        console.error("Lỗi khi tải symbols:", err);
+        setStatus("❌ Không thể tải danh sách symbols", "error");
+      }
+    }
+
+    // Áp dụng bộ lọc
+    function applyFilters() {
+      const marketFilter = document.getElementById("marketFilter").value;
+      const searchFilter = document.getElementById("searchFilter").value.toLowerCase();
+
+      filteredSymbols = symbols.filter(symbol => {
+        // Lọc theo thị trường
+        if (marketFilter !== "all" && symbol.market !== marketFilter) {
+          return false;
+        }
+
+        // Lọc theo tìm kiếm
+        if (searchFilter && !symbol.symbol.toLowerCase().includes(searchFilter)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      renderSymbolsTable();
+    }
+
+    function renderSymbolsTable() {
+      const vnBody = document.getElementById("symbols-vn-body");
+      const usBody = document.getElementById("symbols-us-body");
+
+      vnBody.innerHTML = "";
+      usBody.innerHTML = "";
+
+      filteredSymbols.forEach((symbol) => {
+        const row = document.createElement("tr");
+
+        // Cột mã
+        const symbolCell = document.createElement("td");
+        symbolCell.className = "px-4 py-3 whitespace-nowrap";
+        symbolCell.textContent = symbol.symbol;
+        row.appendChild(symbolCell);
+
+        // Cột trạng thái
+        const statusCell = document.createElement("td");
+        statusCell.className = "px-4 py-3 whitespace-nowrap";
+        const statusBadge = document.createElement("span");
+
+        // Enhanced status display with more states
+        let statusClass, statusText;
+        switch (symbol.status) {
+          case "running":
+            statusClass = "bg-green-100 text-green-800";
+            statusText = "🟢 Đang chạy";
+            break;
+          case "stopping":
+            statusClass = "bg-yellow-100 text-yellow-800";
+            statusText = "🟡 Đang dừng";
+            break;
+          case "stopped":
+            statusClass = "bg-gray-100 text-gray-800";
+            statusText = "⚫ Đã dừng";
+            break;
+          case "completed":
+            statusClass = "bg-blue-100 text-blue-800";
+            statusText = "🔵 Hoàn thành";
+            break;
+          case "failed":
+            statusClass = "bg-red-100 text-red-800";
+            statusText = "🔴 Lỗi";
+            break;
+          default:
+            statusClass = "bg-gray-100 text-gray-800";
+            statusText = "⚪ Chưa chạy";
+        }
+
+        statusBadge.className = `px-2 py-1 text-xs rounded-full ${statusClass}`;
+        statusBadge.textContent = statusText;
+        statusCell.appendChild(statusBadge);
+        row.appendChild(statusCell);
+
+        // Cột thao tác
+        const actionsCell = document.createElement("td");
+        actionsCell.className = "px-4 py-3 whitespace-nowrap";
+
+        if (symbol.status === "running") {
+          const stopBtn = document.createElement("button");
+          stopBtn.className =
+            "px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm";
+          stopBtn.textContent = "⏹ Dừng";
+          stopBtn.onclick = () => stopSymbol(symbol.symbol);
+          actionsCell.appendChild(stopBtn);
+        } else if (symbol.status === "stopping") {
+          const stoppingBtn = document.createElement("button");
+          stoppingBtn.className =
+            "px-3 py-1 bg-yellow-500 text-white rounded cursor-not-allowed text-sm";
+          stoppingBtn.textContent = "⏳ Đang dừng...";
+          stoppingBtn.disabled = true;
+          actionsCell.appendChild(stoppingBtn);
+        } else {
+          // Show start button for stopped, completed, failed, or unknown status
+          const startBtn = document.createElement("button");
+          startBtn.className =
+            "px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm";
+          startBtn.textContent = "▶ Bắt đầu";
+          startBtn.onclick = () => startSymbol(symbol.symbol, symbol.market);
+          actionsCell.appendChild(startBtn);
+
+          // Show delete button for non-running states
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className =
+            "px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm ml-2";
+          deleteBtn.textContent = "🗑 Xóa";
+          deleteBtn.onclick = () => deleteSymbol(symbol.symbol);
+          actionsCell.appendChild(deleteBtn);
+        }
+
+        row.appendChild(actionsCell);
+
+        // Cột xem dữ liệu
+        const viewCell = document.createElement("td");
+        viewCell.className = "px-4 py-3 whitespace-nowrap";
+        const viewLink = document.createElement("a");
+        viewLink.href = `/query?symbol=${symbol.symbol}`;
+        viewLink.target = "_blank";
+        viewLink.className = "text-indigo-600 hover:text-indigo-900";
+        viewLink.textContent = "Xem dữ liệu";
+        viewCell.appendChild(viewLink);
+        row.appendChild(viewCell);
+
+        // Append vào bảng VN hoặc US
+        if (symbol.market === "vn") {
+          vnBody.appendChild(row);
+        } else {
+          usBody.appendChild(row);
+        }
+      });
+    }
+
+    // Thêm symbol mới
+    addSymbolBtn.addEventListener("click", addSymbolHandler); // Gán hàm vào sự kiện
+
+    // Cho phép nhấn Enter để thêm mã
+    symbolInput.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        addSymbolHandler();
+      }
+    });
+
+    // Thêm symbol mới
+    async function addSymbolHandler() {
+      const symbol = symbolInput.value.trim().toUpperCase();
+      const market = document.querySelector(
+        'input[name="market"]:checked'
+      ).value;
+
+      if (!symbol) {
+        setStatus("❌ Vui lòng nhập mã symbol", "error");
+        return;
+      }
+
+      setStatus(`⏳ Đang thêm ${symbol}.${market}...`);
+
+      try {
+        const res = await fetch("/symbols/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol, market }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus("❌ " + data.error, "error");
+          return;
+        }
+
+        setStatus(`✅ Đã thêm ${symbol}.${market} thành công`, "success", true);
+        symbolInput.value = "";
+
+        // Tải lại danh sách symbols
+        await loadSymbols();
+
+        // Tự động start job cho symbol mới
+        await startSymbol(symbol, market);
+      } catch (err) {
+        setStatus("❌ Request thất bại: " + err, "error");
+      }
+    };
+
+    // Start một symbol cụ thể
+    async function startSymbol(symbol, market) {
+      setStatus(`⏳ Đang start job cho ${symbol}...`);
+
+      try {
+        const res = await fetch("/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol, market }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus("❌ " + data.error, "error");
+          return;
+        }
+
+        setStatus(`▶ Collector started for ${symbol}`, "success", true);
+
+        // Tải lại danh sách symbols để cập nhật trạng thái
+        await loadSymbols();
+
+        // Bắt đầu polling nếu chưa có
+      } catch (err) {
+        setStatus("❌ Request thất bại: " + err, "error");
+      }
+    }
+
+    // Stop một symbol cụ thể
+    async function stopSymbol(symbol) {
+      setStatus(`⏹ Đang gửi lệnh dừng cho ${symbol}...`);
+
+      try {
+        const res = await fetch("/stop", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus("❌ " + data.error, "error");
+          return;
+        }
+
+        setStatus(`✅ ${data.message || `Đã gửi lệnh dừng cho ${symbol}`}`, "success", true);
+
+        // Cập nhật trạng thái ngay lập tức để hiển thị "stopping"
+        const symbolObj = symbols.find(s => s.symbol === symbol);
+        if (symbolObj) {
+          symbolObj.status = "stopping";
+          applyFilters(); // Re-render với trạng thái mới
+        }
+
+        // Tải lại danh sách symbols sau 3 giây để cập nhật trạng thái cuối cùng
+        setTimeout(async () => {
+          await loadSymbols();
+        }, 3000);
+
+      } catch (err) {
+        setStatus("❌ Request stop thất bại: " + err, "error");
+      }
+    }
+
+    // Xóa một symbol
+    async function deleteSymbol(symbol) {
+      if (!confirm(`Bạn có chắc muốn xóa ${symbol} khỏi danh sách?`)) return;
+
+      setStatus(`🗑 Đang xóa ${symbol}...`);
+
+      try {
+        const res = await fetch("/symbols/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symbol }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus("❌ " + data.error, "error");
+          return;
+        }
+
+        setStatus(`✅ Đã xóa ${symbol} thành công`, "success", true);
+
+        // Tải lại danh sách symbols
+        await loadSymbols();
+      } catch (err) {
+        setStatus("❌ Request xóa thất bại: " + err, "error");
+      }
+    }
+
+    // Start tất cả symbols
+    startAllBtn.addEventListener("click", async () => {
+      setStatus("⏳ Đang start tất cả jobs...");
+
+      try {
+        const res = await fetch("/start-all", {
+          method: "POST",
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus("❌ " + data.error, "error");
+          return;
+        }
+
+        setStatus("▶ Đã start tất cả collectors", "success", true);
+
+        // Tải lại danh sách symbols để cập nhật trạng thái
+        await loadSymbols();
+
+        // Bắt đầu polling nếu chưa có
+      } catch (err) {
+        setStatus("❌ Request thất bại: " + err, "error");
+      }
+    });
+
+    // Stop tất cả symbols
+    stopAllBtn.addEventListener("click", async () => {
+      setStatus("⏹ Đang dừng tất cả jobs...");
+
+      try {
+        const res = await fetch("/stop-all", {
+          method: "POST",
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          setStatus("❌ " + data.error, "error");
+          return;
+        }
+
+        setStatus("⏹ Đã dừng tất cả collectors", "success", true);
+
+        // Tải lại danh sách symbols để cập nhật trạng thái
+        await loadSymbols();
+
+        // Dừng polling nếu không còn job nào chạy
+      } catch (err) {
+        setStatus("❌ Request thất bại: " + err, "error");
+      }
+    });
+
+    // Khởi tạo
+    document.addEventListener("DOMContentLoaded", () => {
+      loadSymbols();
+
+      // Thêm event listeners cho filters
+      document.getElementById("marketFilter").addEventListener("change", applyFilters);
+      document.getElementById("searchFilter").addEventListener("input", applyFilters);
+
+      // Test button
+      document.getElementById("testLoadBtn").addEventListener("click", () => {
+        console.log("Test button clicked");
+        loadSymbols();
+      });
+    });
+  })();
+</script>
+{% endblock %}

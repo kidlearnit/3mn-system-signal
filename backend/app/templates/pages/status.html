@@ -1,0 +1,37 @@
+{% extends "layouts/base.html" %} {% block title %}Collector Status{% endblock %} {%
+block content %}
+<h2>Status Page</h2>
+<div id="status"></div>
+<div id="logs" style="
+    background: #111;
+    color: #0f0;
+    padding: 10px;
+    height: 300px;
+    overflow: auto;
+  "></div>
+
+<script>
+  // Khi server emit log_update
+  socket.on("log_update", (data) => {
+    console.log("log_update", data);
+    const logsDiv = document.getElementById("logs");
+    logsDiv.innerHTML += `[${data.symbol}] ${data.message}<br>`;
+    logsDiv.scrollTop = logsDiv.scrollHeight; // auto scroll xuống cuối
+  });
+
+  // Lấy status định kỳ từ API (có thể bỏ nếu muốn chỉ dùng socket)
+  function fetchStatus() {
+    fetch("/jobs/status")
+      .then((r) => r.json())
+      .then((data) => {
+        document.getElementById("status").innerHTML = `<pre>${JSON.stringify(
+          data,
+          null,
+          2
+        )}</pre>`;
+      });
+  }
+  setInterval(fetchStatus, 2000);
+  fetchStatus();
+</script>
+{% endblock %}

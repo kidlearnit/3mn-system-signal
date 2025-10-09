@@ -1,0 +1,457 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Strategies Management - Trading Signals{% endblock %}
+
+{% block page_title %}Strategies Management{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-chess text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Strategies Management</h1>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button type="button" onclick="createStrategy()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            New Strategy
+        </button>
+
+        <button type="button" onclick="importStrategy()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-upload mr-2"></i>
+            Import
+        </button>
+
+        <button type="button" onclick="exportStrategies()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors">
+            <i class="fas fa-download mr-2"></i>
+            Export
+        </button>
+
+        <button type="button" onclick="refreshStrategies()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>
+            Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Strategy Stats -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Strategies -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Strategies</p>
+                <p class="text-3xl font-bold text-gray-900" id="totalStrategies">-</p>
+            </div>
+            <div class="p-3 bg-blue-100 rounded-full">
+                <i class="fas fa-chess text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium">+3</span>
+            <span class="text-sm text-gray-500 ml-2">this month</span>
+        </div>
+    </div>
+
+    <!-- Active Strategies -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Active</p>
+                <p class="text-3xl font-bold text-gray-900" id="activeStrategies">8</p>
+            </div>
+            <div class="p-3 bg-green-100 rounded-full">
+                <i class="fas fa-play text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium" id="activePercentage">-</span>
+            <span class="text-sm text-gray-500 ml-2">of total</span>
+        </div>
+    </div>
+
+    <!-- Paused Strategies -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Paused</p>
+                <p class="text-3xl font-bold text-gray-900" id="pausedStrategies">-</p>
+            </div>
+            <div class="p-3 bg-yellow-100 rounded-full">
+                <i class="fas fa-pause text-yellow-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-yellow-600 font-medium" id="pausedPercentage">-</span>
+            <span class="text-sm text-gray-500 ml-2">of total</span>
+        </div>
+    </div>
+
+    <!-- Success Rate -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Avg Success Rate</p>
+                <p class="text-3xl font-bold text-gray-900" id="avgSuccessRate">-</p>
+            </div>
+            <div class="p-3 bg-purple-100 rounded-full">
+                <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium" id="performanceChange">-</span>
+            <span class="text-sm text-gray-500 ml-2">this month</span>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <i class="fas fa-filter mr-2 text-blue-600"></i>
+            Filters & Search
+        </h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Search Input -->
+            <div class="lg:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Search Strategies</label>
+                <div class="relative">
+                    <input type="text" id="strategySearch" placeholder="Search by name, description, or symbol..."
+                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select id="statusFilter"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="stopped">Stopped</option>
+                </select>
+            </div>
+
+            <!-- Type Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <select id="typeFilter"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All Types</option>
+                    <option value="trend">Trend Following</option>
+                    <option value="mean_reversion">Mean Reversion</option>
+                    <option value="momentum">Momentum</option>
+                    <option value="arbitrage">Arbitrage</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mt-4">
+            <button onclick="applyFilters()"
+                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                Apply Filters
+            </button>
+            <button onclick="clearFilters()"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                Clear Filters
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Strategies Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="strategiesGrid">
+    <!-- Strategies will be loaded dynamically -->
+    <div class="col-span-full text-center text-gray-500 py-12">
+        <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+        <p class="text-lg">Loading strategies...</p>
+    </div>
+</div>
+
+<!-- Create Strategy Modal -->
+<div id="createStrategyModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Create New Strategy</h3>
+            </div>
+            <div class="p-6">
+                <form id="createStrategyForm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Strategy Name</label>
+                            <input type="text" id="strategyName" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                            <select id="strategyType" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Type</option>
+                                <option value="trend">Trend Following</option>
+                                <option value="mean_reversion">Mean Reversion</option>
+                                <option value="momentum">Momentum</option>
+                                <option value="arbitrage">Arbitrage</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="strategyDescription" rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Symbols</label>
+                            <input type="text" id="strategySymbols" placeholder="AAPL, MSFT, GOOGL"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Timeframe</label>
+                            <select id="strategyTimeframe"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="1m">1 Minute</option>
+                                <option value="5m">5 Minutes</option>
+                                <option value="15m">15 Minutes</option>
+                                <option value="1h">1 Hour</option>
+                                <option value="4h">4 Hours</option>
+                                <option value="1d">1 Day</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeCreateStrategyModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="saveStrategy()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                    Create Strategy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Strategies management functionality
+    function createStrategy() {
+        document.getElementById('createStrategyModal').classList.remove('hidden');
+    }
+
+    function closeCreateStrategyModal() {
+        document.getElementById('createStrategyModal').classList.add('hidden');
+        document.getElementById('createStrategyForm').reset();
+    }
+
+    function saveStrategy() {
+        const form = document.getElementById('createStrategyForm');
+        if (form.checkValidity()) {
+            console.log('Creating strategy...');
+            closeCreateStrategyModal();
+            refreshStrategies();
+        } else {
+            form.reportValidity();
+        }
+    }
+
+    function viewStrategy(strategyId) {
+        console.log('Viewing strategy:', strategyId);
+        // Navigate to strategy detail page
+        window.location.href = `/strategy/${strategyId}`;
+    }
+
+    function editStrategy(strategyId) {
+        console.log('Editing strategy:', strategyId);
+        // Open edit modal or navigate to edit page
+    }
+
+    function pauseStrategy(strategyId) {
+        if (confirm(`Are you sure you want to pause ${strategyId}?`)) {
+            console.log('Pausing strategy:', strategyId);
+            // Implement pause functionality
+        }
+    }
+
+    function resumeStrategy(strategyId) {
+        console.log('Resuming strategy:', strategyId);
+        // Implement resume functionality
+    }
+
+    function refreshStrategies() {
+        console.log('Refreshing strategies...');
+        // Implement refresh functionality
+    }
+
+    function importStrategy() {
+        console.log('Importing strategy...');
+        // Implement import functionality
+    }
+
+    function exportStrategies() {
+        console.log('Exporting strategies...');
+        // Implement export functionality
+    }
+
+    function applyFilters() {
+        const search = document.getElementById('strategySearch').value;
+        const status = document.getElementById('statusFilter').value;
+        const type = document.getElementById('typeFilter').value;
+
+        console.log('Applying filters:', { search, status, type });
+        // Implement filter functionality
+    }
+
+    function clearFilters() {
+        document.getElementById('strategySearch').value = '';
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('typeFilter').value = '';
+        // Reset grid
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function () {
+        loadStrategiesStats();
+        loadStrategiesList();
+
+        // Refresh data every 60 seconds
+        setInterval(() => {
+            loadStrategiesStats();
+            loadStrategiesList();
+        }, 60000);
+    });
+
+    async function loadStrategiesStats() {
+        try {
+            const response = await fetch('/api/strategies/stats');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const data = result.data;
+
+                // Update statistics
+                document.getElementById('totalStrategies').textContent = data.total_strategies;
+                document.getElementById('activeStrategies').textContent = data.active_strategies;
+                document.getElementById('pausedStrategies').textContent = data.paused_strategies;
+                document.getElementById('activePercentage').textContent = `${data.active_percentage.toFixed(1)}%`;
+                document.getElementById('pausedPercentage').textContent = `${data.paused_percentage.toFixed(1)}%`;
+                document.getElementById('avgSuccessRate').textContent = `${data.avg_success_rate}%`;
+                document.getElementById('performanceChange').textContent = data.performance_change >= 0 ? `+${data.performance_change}` : data.performance_change;
+            }
+        } catch (error) {
+            console.error('Error loading strategies stats:', error);
+        }
+    }
+
+    async function loadStrategiesList() {
+        try {
+            const response = await fetch('/api/strategies/list');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                updateStrategiesGrid(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading strategies list:', error);
+        }
+    }
+
+    function updateStrategiesGrid(strategies) {
+        const container = document.getElementById('strategiesGrid');
+
+        if (!strategies || strategies.length === 0) {
+            container.innerHTML = '<div class="col-span-full text-center text-gray-500 py-12"><p class="text-lg">No strategies found</p></div>';
+            return;
+        }
+
+        container.innerHTML = strategies.map(strategy => {
+            const statusClass = strategy.active ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+            const statusIcon = strategy.active ? 'fa-check-circle' : 'fa-pause';
+            const statusText = strategy.active ? 'Active' : 'Paused';
+
+            const iconColors = ['blue', 'green', 'purple', 'red', 'indigo', 'pink'];
+            const iconColor = iconColors[strategy.id % iconColors.length];
+
+            return `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-${iconColor}-100 rounded-lg">
+                                <i class="fas fa-chart-line text-${iconColor}-600"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-lg font-semibold text-gray-900">${strategy.name}</h3>
+                                <p class="text-sm text-gray-500">${strategy.description || 'No description'}</p>
+                            </div>
+                        </div>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                            <i class="fas ${statusIcon} mr-1"></i>
+                            ${statusText}
+                        </span>
+                    </div>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Success Rate:</span>
+                            <span class="text-sm font-medium text-green-600">${strategy.success_rate}%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Total Signals:</span>
+                            <span class="text-sm font-medium text-gray-900">${strategy.total_signals}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Recent Signals:</span>
+                            <span class="text-sm font-medium text-gray-900">${strategy.recent_signals} (7 days)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-600">Created:</span>
+                            <span class="text-sm font-medium text-gray-900">${getTimeAgo(strategy.created_at)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button onclick="viewStrategy(${strategy.id})" 
+                                class="flex-1 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                            <i class="fas fa-eye mr-1"></i>View
+                        </button>
+                        <button onclick="editStrategy(${strategy.id})" 
+                                class="flex-1 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        <button onclick="${strategy.active ? 'pauseStrategy' : 'resumeStrategy'}(${strategy.id})" 
+                                class="px-3 py-2 text-sm font-medium text-${strategy.active ? 'yellow' : 'green'}-600 bg-${strategy.active ? 'yellow' : 'green'}-50 rounded-lg hover:bg-${strategy.active ? 'yellow' : 'green'}-100 transition-colors">
+                            <i class="fas fa-${strategy.active ? 'pause' : 'play'}"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        }).join('');
+    }
+
+    function getTimeAgo(dateString) {
+        if (!dateString) return 'Unknown';
+
+        const now = new Date();
+        const date = new Date(dateString);
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 1) return 'Today';
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+        return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+    }
+</script>
+{% endblock %}

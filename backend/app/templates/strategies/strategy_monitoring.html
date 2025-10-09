@@ -1,0 +1,368 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="min-h-screen" style="background-color: var(--binance-bg-primary); color: var(--binance-text-primary);">
+    <!-- Header -->
+    <header class="binance-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-sm font-bold" class="text-white">👁️ Strategy Monitoring</h1>
+                    <div class="ml-4 flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-red-500" id="connectionIndicator"></div>
+                        <span class="text-sm ml-2" class="text-gray-400">Status: <span
+                                id="connectionStatus">Disconnected</span></span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="text-sm" class="text-gray-400">
+                        <span id="currentTime"></span>
+                    </div>
+                    <button onclick="toggleMonitoring()"
+                        class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded transition-colors"
+                        id="monitoringToggle">
+                        ▶️ Start Monitoring
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Market Status -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm font-bold mb-6" class="text-white">Market Status</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-red-500" id="usMarketStatus"></div>
+                        <span class="ml-3 text-sm font-semibold" class="text-white">US Market</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-bold" class="text-white" id="usMarketStatusText">Closed</div>
+                        <div class="text-sm" class="text-gray-400" id="usMarketNextOpen">Next open: 9:30 AM EST</div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-red-500" id="vnMarketStatus"></div>
+                        <span class="ml-3 text-sm font-semibold" class="text-white">VN Market</span>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm font-bold" class="text-white" id="vnMarketStatusText">Closed</div>
+                        <div class="text-sm" class="text-gray-400" id="vnMarketNextOpen">Next open: 9:00 AM VN</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div class="text-center">
+                    <div class="text-sm font-bold" class="text-white" id="totalSignals">0</div>
+                    <div class="text-sm" class="text-gray-400">Total Signals</div>
+                </div>
+            </div>
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div class="text-center">
+                    <div class="text-sm font-bold" class="text-white" id="signals24h">0</div>
+                    <div class="text-sm" class="text-gray-400">Signals 24h</div>
+                </div>
+            </div>
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div class="text-center">
+                    <div class="text-sm font-bold signal-buy" id="buySignals">0</div>
+                    <div class="text-sm" class="text-gray-400">Buy Signals</div>
+                </div>
+            </div>
+            <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div class="text-center">
+                    <div class="text-sm font-bold signal-sell" id="sellSignals">0</div>
+                    <div class="text-sm" class="text-gray-400">Sell Signals</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Strategies -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm font-bold mb-6" class="text-white">Live Strategies</h2>
+            <div id="liveStrategies" class="space-y-3">
+                <!-- Live strategies will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Live Signal Feed -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-sm font-bold" class="text-white">Live Signal Feed</h2>
+                <button onclick="clearSignalFeed()"
+                    class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                    🗑️ Clear
+                </button>
+            </div>
+            <div id="liveSignalFeed" class="space-y-3 max-h-96 overflow-y-auto">
+                <p class="text-gray-400 text-center py-4">No signals available</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<script>
+    // Global variables
+    let isMonitoring = false;
+    //let socket = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        loadInitialData();
+        //initializeSocket();
+    });
+
+    // Load initial data
+    async function loadInitialData() {
+        try {
+            const response = await fetch('/api/monitoring/status');
+            const data = await response.json();
+
+            if (data.success) {
+                updateMarketStatus(data.market_status);
+                updateStatistics(data.statistics);
+                updateLiveStrategies(data.strategies);
+            }
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            showNotification('Error loading monitoring data', 'error');
+        }
+    }
+
+    // Update market status
+    function updateMarketStatus(marketStatus) {
+        if (!marketStatus) return;
+
+        // US Market
+        const usStatus = document.getElementById('usMarketStatus');
+        const usStatusText = document.getElementById('usMarketStatusText');
+        const usNextOpen = document.getElementById('usMarketNextOpen');
+
+        if (marketStatus.us) {
+            usStatus.className = 'w-4 h-4 rounded-full bg-green-500';
+            usStatusText.textContent = 'Open';
+            usNextOpen.textContent = 'Market is open';
+        } else {
+            usStatus.className = 'w-4 h-4 rounded-full bg-red-500';
+            usStatusText.textContent = 'Closed';
+            usNextOpen.textContent = 'Next open: 9:30 AM EST';
+        }
+
+        // VN Market
+        const vnStatus = document.getElementById('vnMarketStatus');
+        const vnStatusText = document.getElementById('vnMarketStatusText');
+        const vnNextOpen = document.getElementById('vnMarketNextOpen');
+
+        if (marketStatus.vn) {
+            vnStatus.className = 'w-4 h-4 rounded-full bg-green-500';
+            vnStatusText.textContent = 'Open';
+            vnNextOpen.textContent = 'Market is open';
+        } else {
+            vnStatus.className = 'w-4 h-4 rounded-full bg-red-500';
+            vnStatusText.textContent = 'Closed';
+            vnNextOpen.textContent = 'Next open: 9:00 AM VN';
+        }
+    }
+
+    // Update statistics
+    function updateStatistics(stats) {
+        if (!stats) return;
+
+        document.getElementById('totalSignals').textContent = stats.total_signals || 0;
+        document.getElementById('signals24h').textContent = stats.signals_24h || 0;
+        document.getElementById('buySignals').textContent = stats.buy_signals || 0;
+        document.getElementById('sellSignals').textContent = stats.sell_signals || 0;
+    }
+
+    // Update live strategies
+    function updateLiveStrategies(strategies) {
+        const container = document.getElementById('liveStrategies');
+        container.innerHTML = '';
+
+        if (!strategies || strategies.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 py-8">No active strategies</p>';
+            return;
+        }
+
+        strategies.forEach(strategy => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-700 rounded-lg p-4 border border-gray-600';
+
+            const statusClass = strategy.status === 'running' ? 'status-running' : 'status-stopped';
+
+            div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-semibold text-white">${strategy.symbol}</span>
+                                <span class="text-xs px-2 py-1 rounded ${statusClass}">${strategy.status}</span>
+                            </div>
+                            <p class="text-sm text-gray-400">${strategy.market.toUpperCase()} • ${strategy.strategy_type}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="toggleStrategy('${strategy.id}')" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                                ${strategy.status === 'running' ? '⏹️ Stop' : '▶️ Start'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+            container.appendChild(div);
+        });
+    }
+
+    // Add live signal
+    function addLiveSignal(signal) {
+        const container = document.getElementById('liveSignalFeed');
+
+        // Remove "No signals available" message
+        if (container.children.length === 1 && container.children[0].textContent.includes('No signals available')) {
+            container.innerHTML = '';
+        }
+
+        const div = document.createElement('div');
+        div.className = 'bg-gray-700 rounded-lg p-3 border border-gray-600';
+
+        const signalClass = signal.signal_type === 'BUY' ? 'signal-buy' :
+            signal.signal_type === 'SELL' ? 'signal-sell' : 'signal-hold';
+
+        div.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-semibold text-white">${signal.symbol}</span>
+                            <span class="text-sm ${signalClass} font-semibold">${signal.signal_type}</span>
+                        </div>
+                        <p class="text-sm text-gray-400">${signal.timeframe} • ${signal.zone} • ${new Date(signal.timestamp).toLocaleTimeString()}</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-400">${(signal.strength * 100).toFixed(0)}%</div>
+                    </div>
+                </div>
+            `;
+
+        container.insertBefore(div, container.firstChild);
+
+        // Keep only last 20 signals
+        while (container.children.length > 20) {
+            container.removeChild(container.lastChild);
+        }
+    }
+
+    // Clear signal feed
+    function clearSignalFeed() {
+        if (confirm('Are you sure you want to clear the signal feed?')) {
+            document.getElementById('liveSignalFeed').innerHTML = '<p class="text-gray-400 text-center py-4">No signals available</p>';
+            showNotification('Signal feed cleared', 'info');
+        }
+    }
+
+    // Override common functions for strategy_monitoring.html
+    function refreshDashboard() {
+        loadInitialData();
+        showNotification('Monitoring data refreshed', 'info');
+    }
+
+    function toggleMonitoring() {
+        const button = document.getElementById('monitoringToggle');
+
+        if (isMonitoring) {
+            // Stop monitoring
+            button.textContent = '▶️ Start Monitoring';
+            button.className = 'binance-button success px-4 py-2';
+            isMonitoring = false;
+            showNotification('Monitoring stopped', 'info');
+        } else {
+            // Start monitoring
+            button.textContent = '⏹️ Stop Monitoring';
+            button.className = 'binance-button danger px-4 py-2';
+            isMonitoring = true;
+            showNotification('Monitoring started', 'success');
+        }
+    }
+
+    function showAddStrategyModal() {
+        // Redirect to dashboard to add strategy
+        window.location.href = '/strategy-dashboard';
+    }
+
+    function hideAddStrategyModal() {
+        // Not applicable in this page
+        console.log('hideAddStrategyModal called in strategy_monitoring.html');
+    }
+
+    function toggleStrategy(strategyId) {
+        const action = 'stop'; // In monitoring page, we typically stop strategies
+
+        fetch(`/api/strategies/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ strategy_id: strategyId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Strategy ${action}ed successfully`, 'success');
+                    loadInitialData();
+                } else {
+                    showNotification(`Failed to ${action} strategy: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`Error ${action}ing strategy:`, error);
+                showNotification(`Error ${action}ing strategy`, 'error');
+            });
+    }
+
+    function removeStrategy(strategyId) {
+        if (!confirm('Are you sure you want to remove this strategy?')) {
+            return;
+        }
+
+        fetch('/api/strategies/remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ strategy_id: strategyId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Strategy removed successfully', 'success');
+                    loadInitialData();
+                } else {
+                    showNotification(`Failed to remove strategy: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error removing strategy:', error);
+                showNotification('Error removing strategy', 'error');
+            });
+    }
+
+    function clearSignals() {
+        if (confirm('Are you sure you want to clear all signals?')) {
+            // Clear signals from the monitoring view
+            const container = document.getElementById('liveSignalFeed');
+            if (container) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-4">No signals available</p>';
+            }
+            showNotification('Signals cleared', 'info');
+        }
+    }
+</script>
+{% endblock %}

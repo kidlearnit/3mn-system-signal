@@ -1,0 +1,1150 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Worker Monitoring - Real-time{% endblock %}
+
+{% block page_title %}Worker Monitoring{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-server text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Worker Monitoring</h1>
+        <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 ml-4"
+            id="workerStatus">
+            <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+            ACTIVE
+        </span>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button onclick="toggleAutoRefresh()" id="autoRefreshBtn"
+            class="flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+            <i class="fas fa-play mr-2"></i>
+            Auto Refresh
+        </button>
+
+        <button onclick="refreshAllData()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>
+            Refresh Now
+        </button>
+
+        <button onclick="testDataLoad()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-bug mr-2"></i>
+            Test Data
+        </button>
+    </div>
+</div>
+<!-- Worker Stats Overview -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Workers -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Workers</p>
+                <p class="text-3xl font-bold text-gray-900">5</p>
+            </div>
+            <div class="p-3 bg-blue-100 rounded-full">
+                <i class="fas fa-server text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium">+1</span>
+            <span class="text-sm text-gray-500 ml-2">this week</span>
+        </div>
+    </div>
+
+    <!-- Active Workers -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Active</p>
+                <p class="text-3xl font-bold text-green-600">4</p>
+            </div>
+            <div class="p-3 bg-green-100 rounded-full">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium">80%</span>
+            <span class="text-sm text-gray-500 ml-2">uptime</span>
+        </div>
+    </div>
+
+    <!-- Processing Jobs -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Processing</p>
+                <p class="text-3xl font-bold text-yellow-600">12</p>
+            </div>
+            <div class="p-3 bg-yellow-100 rounded-full">
+                <i class="fas fa-cog text-yellow-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-yellow-600 font-medium">Active</span>
+            <span class="text-sm text-gray-500 ml-2">jobs</span>
+        </div>
+    </div>
+
+    <!-- Queue Size -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Queue Size</p>
+                <p class="text-3xl font-bold text-gray-900">47</p>
+            </div>
+            <div class="p-3 bg-purple-100 rounded-full">
+                <i class="fas fa-list text-purple-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-gray-600 font-medium">Pending</span>
+            <span class="text-sm text-gray-500 ml-2">jobs</span>
+        </div>
+    </div>
+</div>
+<div class="btn-group ms-2" role="group">
+    <button type="button" class="btn btn-success" onclick="startSimulation()" id="startSimBtn">
+        <i class="fas fa-play"></i> Start Sim
+    </button>
+    <button type="button" class="btn btn-danger" onclick="stopSimulation()" id="stopSimBtn" disabled>
+        <i class="fas fa-stop"></i> Stop Sim
+    </button>
+    <button type="button" class="btn btn-warning" onclick="sendTestSignal()">
+        <i class="fas fa-bell"></i> Test Signal
+    </button>
+</div>
+</div>
+</div>
+
+<!-- Worker Status Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card shadow">
+            <div class="card-body text-center">
+                <div class="metric-value text-primary" id="totalSymbols">0</div>
+                <div class="metric-label">Total Symbols</div>
+                <div class="text-xs text-muted">
+                    <span id="activeSymbols" class="badge bg-success">0 active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card shadow">
+            <div class="card-body text-center">
+                <div class="metric-value text-success" id="symbolsWithData">0</div>
+                <div class="metric-label">With Data</div>
+                <div class="text-xs text-muted">
+                    <span class="badge bg-info">Updated</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card shadow">
+            <div class="card-body text-center">
+                <div class="metric-value text-info" id="latestUpdate">-</div>
+                <div class="metric-label">Latest Update</div>
+                <div class="text-xs text-muted">
+                    <span class="badge bg-warning">Real-time</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card shadow">
+            <div class="card-body text-center">
+                <div class="metric-value text-warning" id="dataPoints">0</div>
+                <div class="metric-label">Data Points</div>
+                <div class="text-xs text-muted">
+                    <span class="badge bg-primary">2.3M+</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Symbol Selection -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-coins"></i> Symbol Selection & Monitoring
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="selectedSymbol">Symbol</label>
+                            <select class="form-select" id="selectedSymbol" onchange="loadSymbolData()">
+                                <option value="">Select Symbol...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="selectedTimeframe">Timeframe</label>
+                            <select class="form-select" id="selectedTimeframe" onchange="loadSymbolData()">
+                                <option value="1m">1 Minute</option>
+                                <option value="5m" selected>5 Minutes</option>
+                                <option value="15m">15 Minutes</option>
+                                <option value="1h">1 Hour</option>
+                                <option value="1D">1 Day</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="dataLimit">Data Points</label>
+                            <select class="form-select" id="dataLimit" onchange="loadSymbolData()">
+                                <option value="50">50 points</option>
+                                <option value="100" selected>100 points</option>
+                                <option value="200">200 points</option>
+                                <option value="500">500 points</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="button" class="btn btn-info w-100" onclick="loadSymbolData()">
+                                <i class="fas fa-sync-alt"></i> Load Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Charts -->
+<div class="row">
+    <!-- Candlestick Chart -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line"></i> Candlestick Chart
+                </h6>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary active"
+                        onclick="toggleChartType('candlestick')" id="candlestickBtn">
+                        <i class="fas fa-chart-line"></i> Candles
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="toggleChartType('line')"
+                        id="lineBtn">
+                        <i class="fas fa-chart-area"></i> Line
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="candlestickChart" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- MACD Chart -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-area"></i> MACD Indicator
+                </h6>
+            </div>
+            <div class="card-body">
+                <canvas id="macdChart" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Data Tables -->
+<div class="row">
+    <!-- Active Symbols Table -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-table"></i> Active Symbols
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="symbolsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Exchange</th>
+                                <th>Status</th>
+                                <th>Data Points</th>
+                                <th>Last Update</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="loading-spinner"></div>
+                                    <small class="text-muted">Loading symbols...</small>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Signals -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-signal"></i> Recent Signals
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="signalsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Strategy</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <div class="loading-spinner"></div>
+                                    <small class="text-muted">Loading signals...</small>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Indicators Values -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i> Real-time Indicator Values
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="indicatorsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Timeframe</th>
+                                <th>MACD</th>
+                                <th>MACD Signal</th>
+                                <th>MACD Hist</th>
+                                <th>Bars</th>
+                                <th>Last Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <div class="loading-spinner"></div>
+                                    <small class="text-muted">Loading indicators...</small>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        border-left: 4px solid var(--accent-color);
+        transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-group .btn.active {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+        color: white;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--accent-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
+<script>
+    let candlestickChart, macdChart;
+    let autoRefreshInterval;
+    let refreshInterval = 10000; // 10 seconds default
+    let isAutoRefresh = false;
+    let currentChartType = 'candlestick';
+    let socket;
+    let currentSymbol = '';
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeWebSocket();
+        initializeCharts();
+        loadWorkerStatus();
+        loadSymbolsList();
+        startAutoRefresh();
+    });
+
+    // Initialize WebSocket connection
+    function initializeWebSocket() {
+        socket = io();
+
+        socket.on('connect', function () {
+            console.log('🔌 Connected to WebSocket server');
+            updateConnectionStatus(true);
+
+            // Join signals room for real-time signal updates
+            socket.emit('join_signals');
+        });
+
+        socket.on('disconnect', function () {
+            console.log('❌ Disconnected from WebSocket server');
+            updateConnectionStatus(false);
+        });
+
+        socket.on('connected', function (data) {
+            console.log('✅ WebSocket connection confirmed:', data.message);
+        });
+
+        // Real-time symbol data updates
+        socket.on('symbol_update', function (data) {
+            console.log('📊 Real-time symbol update:', data);
+            if (data.symbol === currentSymbol) {
+                updateChartsWithRealtimeData(data);
+            }
+        });
+
+        // Real-time signal updates
+        socket.on('new_signal', function (data) {
+            console.log('🚨 New signal received:', data);
+            showNewSignalNotification(data);
+            loadRecentSignals(); // Refresh signals table
+        });
+
+        socket.on('signals_update', function (data) {
+            console.log('📈 Signals update:', data);
+            updateSignalsTable(data);
+        });
+
+        // System status updates
+        socket.on('system_status_update', function (data) {
+            console.log('⚙️ System status update:', data);
+            updateSystemStatus(data);
+        });
+    }
+
+    // Update connection status indicator
+    function updateConnectionStatus(connected) {
+        const statusElement = document.getElementById('workerStatus');
+        if (connected) {
+            statusElement.innerHTML = '<i class="fas fa-circle"></i> CONNECTED';
+            statusElement.className = 'badge bg-success ms-2';
+        } else {
+            statusElement.innerHTML = '<i class="fas fa-circle"></i> DISCONNECTED';
+            statusElement.className = 'badge bg-danger ms-2';
+        }
+    }
+
+    // Show new signal notification
+    function showNewSignalNotification(signal) {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-primary border-0';
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <strong>${signal.signal_type}</strong> signal for ${signal.ticker || 'Unknown'}
+                <br><small>${signal.strategy_name || 'Strategy'}</small>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+        const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+        toastContainer.appendChild(toast);
+
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }
+
+    // Create toast container if it doesn't exist
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1055';
+        document.body.appendChild(container);
+        return container;
+    }
+
+    // Update charts with real-time data
+    function updateChartsWithRealtimeData(data) {
+        if (data.candles && data.candles.length > 0) {
+            updateCandlestickChart(data.candles);
+        }
+
+        if (data.macd && data.macd.length > 0) {
+            updateMacdChart(data.macd);
+        }
+
+        // Update indicators table with latest values
+        if (data.latest_candle) {
+            updateIndicatorsTableWithRealtime(data);
+        }
+    }
+
+    // Update indicators table with real-time data
+    function updateIndicatorsTableWithRealtime(data) {
+        const tbody = document.querySelector('#indicatorsTable tbody');
+        if (tbody && data.latest_candle) {
+            const existingRow = tbody.querySelector('tr');
+            if (existingRow) {
+                // Update existing row
+                const cells = existingRow.querySelectorAll('td');
+                if (cells.length >= 7) {
+                    cells[6].innerHTML = `<small>${new Date().toLocaleTimeString()}</small>`;
+                }
+            }
+        }
+    }
+
+    // Update system status
+    function updateSystemStatus(data) {
+        // Update worker metrics if provided
+        if (data.stats) {
+            document.getElementById('totalSymbols').textContent = data.stats.total_symbols || 0;
+            document.getElementById('activeSymbols').textContent = (data.stats.active_symbols || 0) + ' active';
+            document.getElementById('symbolsWithData').textContent = data.stats.symbols_with_data || 0;
+
+            if (data.stats.latest_data_time) {
+                const updateTime = new Date(data.stats.latest_data_time);
+                document.getElementById('latestUpdate').textContent = updateTime.toLocaleTimeString();
+            }
+        }
+    }
+
+    // Initialize charts
+    function initializeCharts() {
+        // Candlestick Chart
+        const candlestickCtx = document.getElementById('candlestickChart').getContext('2d');
+        candlestickChart = new Chart(candlestickCtx, {
+            type: 'candlestick',
+            data: {
+                datasets: [{
+                    label: 'Price',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'minute'
+                        }
+                    },
+                    y: {
+                        position: 'right'
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // MACD Chart
+        const macdCtx = document.getElementById('macdChart').getContext('2d');
+        macdChart = new Chart(macdCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'MACD',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Signal',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Histogram',
+                    data: [],
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    type: 'bar'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Load worker status
+    async function loadWorkerStatus() {
+        try {
+            console.log('🔄 Loading worker status...');
+            const response = await fetch('/api/real/worker-status');
+            const data = await response.json();
+            console.log('📊 Worker status data:', data);
+
+            if (data.status === 'success') {
+                console.log('✅ Updating worker metrics with data:', data.data);
+                updateWorkerMetrics(data.data);
+                updateSymbolsTable(data.data.symbols);
+            } else {
+                console.error('❌ API returned error:', data.message);
+            }
+        } catch (error) {
+            console.error('❌ Error loading worker status:', error);
+        }
+    }
+
+    // Update worker metrics
+    function updateWorkerMetrics(data) {
+        console.log('📈 Updating worker metrics with stats:', data.stats);
+
+        const totalSymbolsEl = document.getElementById('totalSymbols');
+        const activeSymbolsEl = document.getElementById('activeSymbols');
+        const symbolsWithDataEl = document.getElementById('symbolsWithData');
+        const latestUpdateEl = document.getElementById('latestUpdate');
+        const dataPointsEl = document.getElementById('dataPoints');
+
+        if (totalSymbolsEl) {
+            totalSymbolsEl.textContent = data.stats.total_symbols;
+            console.log('✅ Updated totalSymbols:', data.stats.total_symbols);
+        } else {
+            console.error('❌ Element totalSymbols not found');
+        }
+
+        if (activeSymbolsEl) {
+            activeSymbolsEl.textContent = data.stats.active_symbols + ' active';
+            console.log('✅ Updated activeSymbols:', data.stats.active_symbols);
+        } else {
+            console.error('❌ Element activeSymbols not found');
+        }
+
+        if (symbolsWithDataEl) {
+            symbolsWithDataEl.textContent = data.stats.symbols_with_data;
+            console.log('✅ Updated symbolsWithData:', data.stats.symbols_with_data);
+        } else {
+            console.error('❌ Element symbolsWithData not found');
+        }
+
+        if (data.stats.latest_data_time && latestUpdateEl) {
+            const updateTime = new Date(data.stats.latest_data_time);
+            latestUpdateEl.textContent = updateTime.toLocaleTimeString();
+            console.log('✅ Updated latestUpdate:', updateTime.toLocaleTimeString());
+        }
+
+        if (dataPointsEl) {
+            dataPointsEl.textContent = '2.3M+';
+            console.log('✅ Updated dataPoints: 2.3M+');
+        }
+    }
+
+    // Load symbols list
+    async function loadSymbolsList() {
+        try {
+            console.log('🔄 Loading symbols list...');
+            const response = await fetch('/api/real/worker-status');
+            const data = await response.json();
+            console.log('📊 Symbols data:', data);
+
+            if (data.status === 'success') {
+                const select = document.getElementById('selectedSymbol');
+                if (select) {
+                    select.innerHTML = '<option value="">Select Symbol...</option>';
+                    console.log('✅ Populating symbols dropdown with:', data.data.symbols.length, 'symbols');
+
+                    data.data.symbols.forEach(symbol => {
+                        const option = document.createElement('option');
+                        option.value = symbol.ticker;
+                        option.textContent = `${symbol.ticker} - ${symbol.exchange}`;
+                        select.appendChild(option);
+                        console.log('✅ Added symbol option:', symbol.ticker);
+                    });
+                } else {
+                    console.error('❌ Element selectedSymbol not found');
+                }
+            } else {
+                console.error('❌ API returned error:', data.message);
+            }
+        } catch (error) {
+            console.error('❌ Error loading symbols list:', error);
+        }
+    }
+
+    // Load symbol data
+    async function loadSymbolData() {
+        const symbol = document.getElementById('selectedSymbol').value;
+        const timeframe = document.getElementById('selectedTimeframe').value;
+        const limit = document.getElementById('dataLimit').value;
+
+        if (!symbol) {
+            showToast('Please select a symbol', 'warning');
+            return;
+        }
+
+        // Update current symbol and join WebSocket room
+        if (currentSymbol !== symbol) {
+            if (currentSymbol && socket) {
+                socket.emit('leave_symbol', { symbol: currentSymbol });
+            }
+            currentSymbol = symbol;
+            if (socket) {
+                socket.emit('join_symbol', { symbol: symbol });
+            }
+        }
+
+        try {
+            // Load chart data
+            const response = await fetch(`/api/real/chart-data?symbol=${symbol}&timeframe=${timeframe}&limit=${limit}`);
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                updateCandlestickChart(data.data.candles);
+                updateMacdChart(data.data.macd);
+                updateIndicatorsTable(symbol, timeframe, data.data);
+            }
+        } catch (error) {
+            console.error('Error loading symbol data:', error);
+            showToast('Error loading symbol data', 'danger');
+        }
+    }
+
+    // Update candlestick chart
+    function updateCandlestickChart(candles) {
+        const chartData = candles.map(candle => ({
+            x: new Date(candle.timestamp),
+            o: candle.open,
+            h: candle.high,
+            l: candle.low,
+            c: candle.close
+        }));
+
+        candlestickChart.data.datasets[0].data = chartData;
+        candlestickChart.update();
+    }
+
+    // Update MACD chart
+    function updateMacdChart(macdData) {
+        const labels = macdData.map(item => new Date(item.timestamp));
+        const macdValues = macdData.map(item => item.macd);
+        const signalValues = macdData.map(item => item.macd_signal);
+        const histValues = macdData.map(item => item.histogram);
+
+        macdChart.data.labels = labels;
+        macdChart.data.datasets[0].data = macdValues;
+        macdChart.data.datasets[1].data = signalValues;
+        macdChart.data.datasets[2].data = histValues;
+        macdChart.update();
+    }
+
+    // Update symbols table
+    function updateSymbolsTable(symbols) {
+        console.log('📊 Updating symbols table with:', symbols.length, 'symbols');
+
+        const tbody = document.querySelector('#symbolsTable tbody');
+        if (!tbody) {
+            console.error('❌ Symbols table tbody not found');
+            return;
+        }
+
+        tbody.innerHTML = '';
+        console.log('✅ Cleared symbols table');
+
+        symbols.forEach((symbol, index) => {
+            console.log(`✅ Adding symbol ${index + 1}:`, symbol.ticker);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+            <td><strong>${symbol.ticker}</strong></td>
+            <td><span class="badge bg-secondary">${symbol.exchange}</span></td>
+            <td>
+                <span class="badge ${symbol.active ? 'bg-success' : 'bg-secondary'}">
+                    ${symbol.active ? 'Active' : 'Inactive'}
+                </span>
+            </td>
+            <td>${symbol.candle_count.toLocaleString()}</td>
+            <td><small>${symbol.last_update ? new Date(symbol.last_update).toLocaleString() : 'N/A'}</small></td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadSymbolData('${symbol.ticker}')">
+                    <i class="fas fa-chart-line"></i>
+                </button>
+            </td>
+        `;
+            tbody.appendChild(row);
+        });
+
+        console.log('✅ Symbols table updated with', symbols.length, 'rows');
+    }
+
+    // Update indicators table
+    function updateIndicatorsTable(symbol, timeframe, data) {
+        const tbody = document.querySelector('#indicatorsTable tbody');
+        tbody.innerHTML = '';
+
+        if (data.macd && data.macd.length > 0) {
+            const latestMacd = data.macd[data.macd.length - 1];
+            const latestBars = data.bars && data.bars.length > 0 ? data.bars[data.bars.length - 1] : null;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+            <td><strong>${symbol}</strong></td>
+            <td><span class="badge bg-info">${timeframe}</span></td>
+            <td class="${latestMacd.macd >= 0 ? 'text-success' : 'text-danger'}">${latestMacd.macd.toFixed(4)}</td>
+            <td class="${latestMacd.macd_signal >= 0 ? 'text-success' : 'text-danger'}">${latestMacd.macd_signal.toFixed(4)}</td>
+            <td class="${latestMacd.histogram >= 0 ? 'text-success' : 'text-danger'}">${latestMacd.histogram.toFixed(4)}</td>
+            <td>${latestBars ? latestBars.bars.toFixed(4) : 'N/A'}</td>
+            <td><small>${new Date(latestMacd.timestamp).toLocaleString()}</small></td>
+        `;
+            tbody.appendChild(row);
+        }
+    }
+
+    // Load recent signals
+    async function loadRecentSignals() {
+        try {
+            const response = await fetch('/api/real/signals?limit=10');
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                updateSignalsTable(data.data.signals);
+            }
+        } catch (error) {
+            console.error('Error loading signals:', error);
+        }
+    }
+
+    // Update signals table
+    function updateSignalsTable(signals) {
+        const tbody = document.querySelector('#signalsTable tbody');
+        tbody.innerHTML = '';
+
+        signals.forEach(signal => {
+            const row = document.createElement('tr');
+            const signalTypeClass = signal.signal_type.includes('bull') ? 'text-success' :
+                signal.signal_type.includes('bear') ? 'text-danger' : 'text-warning';
+            const signalIcon = signal.signal_type.includes('bull') ? '📈' : signal.signal_type.includes('bear') ? '📉' : '➡️';
+
+            row.innerHTML = `
+            <td><small>${new Date(signal.timestamp).toLocaleString()}</small></td>
+            <td><strong>${signal.symbol}</strong></td>
+            <td>
+                <span class="${signalTypeClass}">
+                    ${signalIcon} ${signal.signal_type}
+                </span>
+            </td>
+            <td><span class="badge bg-info">${signal.strategy_name || 'N/A'}</span></td>
+            <td><small>${JSON.stringify(signal.details)}</small></td>
+        `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Toggle chart type
+    function toggleChartType(type) {
+        currentChartType = type;
+
+        // Update buttons
+        document.getElementById('candlestickBtn').classList.toggle('active', type === 'candlestick');
+        document.getElementById('lineBtn').classList.toggle('active', type === 'line');
+
+        // Update chart type
+        if (type === 'line') {
+            candlestickChart.config.type = 'line';
+            candlestickChart.data.datasets[0].data = candlestickChart.data.datasets[0].data.map(item => ({
+                x: item.x,
+                y: item.c
+            }));
+        } else {
+            candlestickChart.config.type = 'candlestick';
+        }
+
+        candlestickChart.update();
+    }
+
+    // Auto refresh functionality
+    function toggleAutoRefresh() {
+        const btn = document.getElementById('autoRefreshBtn');
+        if (isAutoRefresh) {
+            clearInterval(autoRefreshInterval);
+            btn.innerHTML = '<i class="fas fa-play"></i> Auto Refresh';
+            btn.className = 'btn btn-outline-primary';
+            isAutoRefresh = false;
+        } else {
+            autoRefreshInterval = setInterval(refreshAllData, refreshInterval);
+            btn.innerHTML = '<i class="fas fa-pause"></i> Stop Auto';
+            btn.className = 'btn btn-primary';
+            isAutoRefresh = true;
+        }
+    }
+
+    function changeRefreshInterval(interval) {
+        refreshInterval = interval;
+        if (isAutoRefresh) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(refreshAllData, refreshInterval);
+        }
+    }
+
+    function refreshAllData() {
+        loadWorkerStatus();
+        loadRecentSignals();
+
+        const symbol = document.getElementById('selectedSymbol').value;
+        if (symbol) {
+            loadSymbolData();
+        }
+    }
+
+    function startAutoRefresh() {
+        autoRefreshInterval = setInterval(refreshAllData, refreshInterval);
+        isAutoRefresh = true;
+        document.getElementById('autoRefreshBtn').innerHTML = '<i class="fas fa-pause"></i> Stop Auto';
+        document.getElementById('autoRefreshBtn').className = 'btn btn-primary';
+    }
+
+    // Simulation functions
+    async function startSimulation() {
+        try {
+            const response = await fetch('/api/simulator/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('startSimBtn').disabled = true;
+                document.getElementById('stopSimBtn').disabled = false;
+                showToast('Real-time simulation started', 'success');
+            } else {
+                showToast('Error starting simulation: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error starting simulation:', error);
+            showToast('Error starting simulation', 'danger');
+        }
+    }
+
+    async function stopSimulation() {
+        try {
+            const response = await fetch('/api/simulator/stop', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                document.getElementById('startSimBtn').disabled = false;
+                document.getElementById('stopSimBtn').disabled = true;
+                showToast('Real-time simulation stopped', 'warning');
+            } else {
+                showToast('Error stopping simulation: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error stopping simulation:', error);
+            showToast('Error stopping simulation', 'danger');
+        }
+    }
+
+    async function sendTestSignal() {
+        const symbol = document.getElementById('selectedSymbol').value || 'AAPL';
+        const signalTypes = ['BUY', 'SELL', 'HOLD'];
+        const signalType = signalTypes[Math.floor(Math.random() * signalTypes.length)];
+
+        try {
+            const response = await fetch('/api/simulator/send-signal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    symbol: symbol,
+                    signal_type: signalType,
+                    strategy_name: 'Test Strategy'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showToast(`Test signal sent: ${signalType} for ${symbol}`, 'info');
+            } else {
+                showToast('Error sending test signal: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error sending test signal:', error);
+            showToast('Error sending test signal', 'danger');
+        }
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+        const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+        toastContainer.appendChild(toast);
+
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 3000);
+    }
+
+    // Test data load function
+    function testDataLoad() {
+        console.log('🧪 Testing data load...');
+
+        // Test if elements exist
+        const elements = [
+            'totalSymbols', 'activeSymbols', 'symbolsWithData',
+            'latestUpdate', 'dataPoints', 'selectedSymbol'
+        ];
+
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                console.log(`✅ Element ${id} found:`, el);
+            } else {
+                console.error(`❌ Element ${id} not found`);
+            }
+        });
+
+        // Test API call
+        fetch('/api/real/worker-status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('🧪 API Response:', data);
+                if (data.status === 'success') {
+                    console.log('🧪 Data available:', data.data);
+                    updateWorkerMetrics(data.data);
+                    updateSymbolsTable(data.data.symbols);
+                }
+            })
+            .catch(error => {
+                console.error('🧪 API Error:', error);
+            });
+    }
+
+    // Global refresh function
+    window.refreshData = refreshAllData;
+</script>
+{% endblock %}

@@ -1,0 +1,318 @@
+{
+  "version": "1.0.0",
+  "categories": {
+    "input": {
+      "name": "Input Nodes",
+      "description": "Data input and symbol selection nodes",
+      "nodes": [
+        {
+          "type": "symbol",
+          "name": "Symbol",
+          "icon": "fas fa-coins",
+          "description": "Chọn mã cổ phiếu",
+          "properties": {
+            "ticker": "",
+            "exchange": "US",
+            "market": "US"
+          },
+          "formBuilder": "createSymbolConfigurationForm",
+          "statusBuilder": "getSymbolStatus"
+        },
+        {
+          "type": "data-source",
+          "name": "Data Source",
+          "icon": "fas fa-database",
+          "description": "Nguồn dữ liệu",
+          "properties": {
+            "source": "yfinance",
+            "api_key": "",
+            "rate_limit": 100,
+            "timeout": 30
+          },
+          "formBuilder": "createDataSourceConfigurationForm",
+          "statusBuilder": "getDataSourceStatus"
+        }
+      ]
+    },
+    "strategy": {
+      "name": "Strategy Nodes",
+      "description": "Technical analysis and trading strategy nodes",
+      "nodes": [
+        {
+          "type": "vn-macd-7tf",
+          "name": "VN MACD 7TF",
+          "icon": "fas fa-chart-line",
+          "description": "VN MACD 7 Timeframes Strategy",
+          "properties": {
+            "timeframes": ["1m", "2m", "5m", "15m", "30m", "1h", "4h"],
+            "timeframeWeights": {
+              "1m": 2,
+              "2m": 3,
+              "5m": 4,
+              "15m": 5,
+              "30m": 6,
+              "1h": 7,
+              "4h": 8
+            },
+            "fastPeriod": 12,
+            "slowPeriod": 26,
+            "signalPeriod": 9,
+            "useZones": true,
+            "marketTemplate": "VN",
+            "minConfidence": 0.6,
+            "minTrendConsensus": 2,
+            "minEntryConsensus": 2,
+            "strategyType": "VN_MACD_7TF",
+            "isProductionReady": true
+          },
+          "formBuilder": "createVNMacd7TFConfigurationForm",
+          "statusBuilder": "getVNMacd7TFStatus"
+        },
+        {
+          "type": "vn-sma-7tf",
+          "name": "VN SMA 7TF",
+          "icon": "fas fa-chart-area",
+          "description": "VN SMA 7 Timeframes Strategy",
+          "properties": {
+            "timeframes": ["1m", "2m", "5m", "15m", "30m", "1h", "4h"],
+            "timeframeWeights": {
+              "1m": 2,
+              "2m": 3,
+              "5m": 4,
+              "15m": 5,
+              "30m": 6,
+              "1h": 7,
+              "4h": 8
+            },
+            "periods": [5, 10, 20, 50, 100, 200, 144],
+            "marketTemplate": "VN",
+            "minConfidence": 0.6,
+            "strategyType": "VN_SMA_7TF",
+            "isProductionReady": true
+          },
+          "formBuilder": "createVNSma7TFConfigurationForm",
+          "statusBuilder": "getVNSma7TFStatus"
+        },
+        {
+          "type": "macd",
+          "name": "MACD",
+          "icon": "fas fa-chart-line",
+          "description": "MACD Strategy",
+          "properties": {
+            "timeframes": ["1m", "2m", "5m", "15m", "30m", "1h", "4h"],
+            "timeframeWeights": {
+              "1m": 2,
+              "2m": 3,
+              "5m": 4,
+              "15m": 5,
+              "30m": 6,
+              "1h": 7,
+              "4h": 8
+            },
+            "fastPeriod": 12,
+            "slowPeriod": 26,
+            "signalPeriod": 9,
+            "useZones": true,
+            "marketTemplate": "VN",
+            "minConfidence": 0.6,
+            "minTrendConsensus": 2,
+            "minEntryConsensus": 2
+          },
+          "formBuilder": "createMacdConfigurationForm",
+          "statusBuilder": "getMacdStatus"
+        },
+        {
+          "type": "macd-multi",
+          "name": "MACD Multi-TF",
+          "icon": "fas fa-chart-line",
+          "description": "MACD Multi-Timeframe Analysis",
+          "properties": {
+            "symbolThresholds": [],
+            "macdMulti": {
+              "fastPeriod": 7,
+              "slowPeriod": 113,
+              "signalPeriod": 144,
+              "timeframes": ["1m", "2m", "5m", "15m", "30m", "1h"]
+            }
+          },
+          "formBuilder": "createMACDMultiConfigurationForm",
+          "statusBuilder": "getMACDMultiStatus"
+        },
+        {
+          "type": "multi-indicator",
+          "name": "Multi-Indicator",
+          "icon": "fas fa-layer-group",
+          "description": "Multi-Indicator Analysis (MACD+SMA+RSI+BB)",
+          "properties": {
+            "symbolThresholds": [],
+            "macdMulti": {
+              "fastPeriod": 7,
+              "slowPeriod": 113,
+              "signalPeriod": 144,
+              "timeframes": ["1m", "2m", "5m", "15m", "30m", "1h"]
+            },
+            "sma": {
+              "timeframes": ["1m", "2m", "5m", "15m", "30m", "1h", "4h"],
+              "periods": [5, 10, 20, 50, 100, 200, 144]
+            },
+            "rsi": {
+              "period": 14,
+              "timeframes": ["5m", "15m", "30m", "1h", "4h"],
+              "overbought": 70,
+              "oversold": 30
+            },
+            "bollinger": {
+              "period": 20,
+              "stdDev": 2,
+              "timeframes": ["15m", "30m", "1h", "4h"]
+            },
+            "aggregation": {
+              "method": "weighted_average",
+              "minStrategies": 3,
+              "consensusThreshold": 0.7,
+              "confidenceThreshold": 0.6,
+              "customWeights": {
+                "macd_multi": 0.3,
+                "sma": 0.25,
+                "rsi": 0.2,
+                "bollinger": 0.25
+              }
+            }
+          },
+          "formBuilder": "createMultiIndicatorConfigurationForm",
+          "statusBuilder": "getMultiIndicatorStatus"
+        },
+        {
+          "type": "sma",
+          "name": "SMA",
+          "icon": "fas fa-chart-area",
+          "description": "Moving Average Strategy",
+          "properties": {
+            "timeframes": ["1m", "2m", "5m", "15m", "30m", "1h", "4h"],
+            "timeframeWeights": {
+              "1m": 2,
+              "2m": 3,
+              "5m": 4,
+              "15m": 5,
+              "30m": 6,
+              "1h": 7,
+              "4h": 8
+            },
+            "periods": [5, 10, 20, 50, 100, 200, 144],
+            "marketTemplate": "VN",
+            "minConfidence": 0.6
+          },
+          "formBuilder": "createSMAConfigurationForm",
+          "statusBuilder": "getSMAStatus"
+        },
+        {
+          "type": "rsi",
+          "name": "RSI",
+          "icon": "fas fa-chart-bar",
+          "description": "RSI Strategy",
+          "properties": {
+            "period": 14,
+            "timeframes": ["5m", "15m", "30m", "1h", "4h"],
+            "overbought": 70,
+            "oversold": 30,
+            "minConfidence": 0.5
+          },
+          "formBuilder": "createRSIConfigurationForm",
+          "statusBuilder": "getRSIStatus"
+        },
+        {
+          "type": "bollinger",
+          "name": "Bollinger Bands",
+          "icon": "fas fa-chart-pie",
+          "description": "Bollinger Bands Strategy",
+          "properties": {
+            "period": 20,
+            "stdDev": 2,
+            "timeframes": ["15m", "30m", "1h", "4h"],
+            "minConfidence": 0.5
+          },
+          "formBuilder": "createBollingerConfigurationForm",
+          "statusBuilder": "getBollingerStatus"
+        }
+      ]
+    },
+    "logic": {
+      "name": "Logic Nodes",
+      "description": "Conditional logic and data processing nodes",
+      "nodes": [
+        {
+          "type": "condition",
+          "name": "Condition",
+          "icon": "fas fa-question-circle",
+          "description": "Điều kiện logic",
+          "properties": {
+            "condition": "",
+            "operator": "==",
+            "value": ""
+          },
+          "formBuilder": "createConditionConfigurationForm",
+          "statusBuilder": "getConditionStatus"
+        },
+        {
+          "type": "aggregation",
+          "name": "Aggregation",
+          "icon": "fas fa-puzzle-piece",
+          "description": "Tổng hợp tín hiệu",
+          "properties": {
+            "method": "weighted_average",
+            "minStrategies": 3,
+            "consensusThreshold": 0.7,
+            "confidenceThreshold": 0.6
+          },
+          "formBuilder": "createAggregationConfigurationForm",
+          "statusBuilder": "getAggregationStatus"
+        },
+        {
+          "type": "filter",
+          "name": "Filter",
+          "icon": "fas fa-filter",
+          "description": "Lọc tín hiệu",
+          "properties": {
+            "filterType": "confidence",
+            "threshold": 0.6,
+            "operator": ">="
+          },
+          "formBuilder": "createFilterConfigurationForm",
+          "statusBuilder": "getFilterStatus"
+        }
+      ]
+    },
+    "output": {
+      "name": "Output Nodes",
+      "description": "Signal output and notification nodes",
+      "nodes": [
+        {
+          "type": "output",
+          "name": "Output",
+          "icon": "fas fa-signal",
+          "description": "Xuất tín hiệu",
+          "properties": {
+            "outputType": "signal",
+            "format": "json",
+            "destination": "database"
+          },
+          "formBuilder": "createOutputConfigurationForm",
+          "statusBuilder": "getOutputStatus"
+        },
+        {
+          "type": "alert",
+          "name": "Alert",
+          "icon": "fas fa-bell",
+          "description": "Cảnh báo",
+          "properties": {
+            "alertType": "telegram",
+            "message": "",
+            "recipients": []
+          },
+          "formBuilder": "createAlertConfigurationForm",
+          "statusBuilder": "getAlertStatus"
+        }
+      ]
+    }
+  }
+}

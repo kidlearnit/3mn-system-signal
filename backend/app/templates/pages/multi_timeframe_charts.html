@@ -1,0 +1,514 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Multi-timeframe Charts - Trading Signals{% endblock %}
+
+{% block page_title %}Multi-timeframe Charts{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-chart-bar text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Multi-timeframe Charts</h1>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button onclick="syncTimeframes()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>
+            Sync Timeframes
+        </button>
+
+        <button onclick="exportCharts()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-download mr-2"></i>
+            Export Charts
+        </button>
+
+        <button onclick="toggleFullscreen()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
+            <i class="fas fa-expand mr-2"></i>
+            Fullscreen
+        </button>
+    </div>
+</div>
+
+<!-- Symbol and Timeframe Selection -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Chart Settings</h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Symbol Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+                <select id="symbolSelect"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="AAPL">AAPL</option>
+                    <option value="MSFT">MSFT</option>
+                    <option value="GOOGL">GOOGL</option>
+                    <option value="TSLA">TSLA</option>
+                    <option value="BTCUSDT">BTCUSDT</option>
+                    <option value="ETHUSDT">ETHUSDT</option>
+                </select>
+            </div>
+
+            <!-- Chart Type -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Chart Type</label>
+                <select id="chartTypeSelect"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="candlestick">Candlestick</option>
+                    <option value="line">Line</option>
+                    <option value="area">Area</option>
+                    <option value="bar">Bar</option>
+                </select>
+            </div>
+
+            <!-- Indicators -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Indicators</label>
+                <select id="indicatorsSelect"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="none">None</option>
+                    <option value="macd">MACD</option>
+                    <option value="rsi">RSI</option>
+                    <option value="bollinger">Bollinger Bands</option>
+                    <option value="sma">SMA</option>
+                </select>
+            </div>
+
+            <!-- Auto Refresh -->
+            <div class="flex items-end">
+                <label class="flex items-center">
+                    <input type="checkbox" id="autoRefresh"
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <span class="ml-2 text-sm text-gray-700">Auto Refresh</span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeframe Selector -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Timeframe Selection</h3>
+    </div>
+    <div class="p-6">
+        <div class="flex flex-wrap gap-3">
+            <button onclick="selectTimeframe('1m')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                1 Minute
+            </button>
+            <button onclick="selectTimeframe('5m')"
+                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg">
+                5 Minutes
+            </button>
+            <button onclick="selectTimeframe('15m')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                15 Minutes
+            </button>
+            <button onclick="selectTimeframe('1h')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                1 Hour
+            </button>
+            <button onclick="selectTimeframe('4h')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                4 Hours
+            </button>
+            <button onclick="selectTimeframe('1d')"
+                class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                1 Day
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Multi-timeframe Charts Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- 1 Minute Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">1 Minute</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Last Update: 2 min ago</span>
+                    <button onclick="refreshChart('1m')"
+                        class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="chart1m" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">1 Minute Chart</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5 Minutes Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">5 Minutes</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Last Update: 5 min ago</span>
+                    <button onclick="refreshChart('5m')"
+                        class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="chart5m" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">5 Minutes Chart</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 15 Minutes Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">15 Minutes</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Last Update: 15 min ago</span>
+                    <button onclick="refreshChart('15m')"
+                        class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="chart15m" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">15 Minutes Chart</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1 Hour Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">1 Hour</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Last Update: 1 hour ago</span>
+                    <button onclick="refreshChart('1h')"
+                        class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="chart1h" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">1 Hour Chart</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4 Hours and 1 Day Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 4 Hours Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">4 Hours</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Last Update: 4 hours ago</span>
+                    <button onclick="refreshChart('4h')"
+                        class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="chart4h" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">4 Hours Chart</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1 Day Chart -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">1 Day</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Last Update: 1 day ago</span>
+                    <button onclick="refreshChart('1d')"
+                        class="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div id="chart1d" class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center">
+                    <i class="fas fa-chart-line text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">1 Day Chart</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Information Panel -->
+<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Chart Information</h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Current Price -->
+            <div class="text-center">
+                <p class="text-sm text-gray-500">Current Price</p>
+                <p class="text-2xl font-bold text-gray-900" id="currentPrice">$150.25</p>
+            </div>
+
+            <!-- 24h Change -->
+            <div class="text-center">
+                <p class="text-sm text-gray-500">24h Change</p>
+                <p class="text-2xl font-bold text-green-600" id="priceChange">+2.5%</p>
+            </div>
+
+            <!-- Volume -->
+            <div class="text-center">
+                <p class="text-sm text-gray-500">Volume</p>
+                <p class="text-2xl font-bold text-gray-900" id="volume">45.2M</p>
+            </div>
+
+            <!-- Market Cap -->
+            <div class="text-center">
+                <p class="text-sm text-gray-500">Market Cap</p>
+                <p class="text-2xl font-bold text-gray-900" id="marketCap">$2.4T</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LightweightCharts Library -->
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
+<script>
+    // Multi-timeframe charts management
+    class MultiTimeframeCharts {
+        constructor() {
+            this.charts = {};
+            this.currentSymbol = 'AAPL';
+            this.currentTimeframe = '5m';
+            this.autoRefresh = false;
+            this.refreshInterval = null;
+        }
+
+        init() {
+            this.initCharts();
+            this.setupEventListeners();
+            this.loadAllCharts();
+        }
+
+        initCharts() {
+            const timeframes = ['1m', '5m', '15m', '1h', '4h', '1d'];
+
+            timeframes.forEach(tf => {
+                const container = document.getElementById(`chart${tf}`);
+                if (container) {
+                    this.charts[tf] = LightweightCharts.createChart(container, {
+                        width: container.clientWidth,
+                        height: container.clientHeight,
+                        layout: {
+                            backgroundColor: '#ffffff',
+                            textColor: '#333',
+                        },
+                        grid: {
+                            vertLines: {
+                                color: '#f0f0f0',
+                            },
+                            horzLines: {
+                                color: '#f0f0f0',
+                            },
+                        },
+                        crosshair: {
+                            mode: LightweightCharts.CrosshairMode.Normal,
+                        },
+                        rightPriceScale: {
+                            borderColor: '#cccccc',
+                        },
+                        timeScale: {
+                            borderColor: '#cccccc',
+                        },
+                    });
+                }
+            });
+        }
+
+        setupEventListeners() {
+            // Symbol change
+            document.getElementById('symbolSelect').addEventListener('change', (e) => {
+                this.currentSymbol = e.target.value;
+                this.loadAllCharts();
+            });
+
+            // Chart type change
+            document.getElementById('chartTypeSelect').addEventListener('change', (e) => {
+                this.updateChartType(e.target.value);
+            });
+
+            // Indicators change
+            document.getElementById('indicatorsSelect').addEventListener('change', (e) => {
+                this.updateIndicators(e.target.value);
+            });
+
+            // Auto refresh toggle
+            document.getElementById('autoRefresh').addEventListener('change', (e) => {
+                this.autoRefresh = e.target.checked;
+                if (this.autoRefresh) {
+                    this.startAutoRefresh();
+                } else {
+                    this.stopAutoRefresh();
+                }
+            });
+        }
+
+        async loadAllCharts() {
+            const timeframes = ['1m', '5m', '15m', '1h', '4h', '1d'];
+
+            for (const tf of timeframes) {
+                await this.loadChart(tf);
+            }
+        }
+
+        async loadChart(timeframe) {
+            try {
+                const response = await fetch(`/api/candles/${this.currentSymbol}?timeframe=${timeframe}`);
+                const data = await response.json();
+
+                if (data.candles && this.charts[timeframe]) {
+                    const candlestickSeries = this.charts[timeframe].addCandlestickSeries({
+                        upColor: '#26a69a',
+                        downColor: '#ef5350',
+                        borderVisible: false,
+                        wickUpColor: '#26a69a',
+                        wickDownColor: '#ef5350',
+                    });
+
+                    candlestickSeries.setData(data.candles);
+                    this.charts[timeframe].timeScale().fitContent();
+                }
+            } catch (error) {
+                console.error(`Error loading ${timeframe} chart:`, error);
+            }
+        }
+
+        updateChartType(chartType) {
+            console.log('Updating chart type to:', chartType);
+            // Implementation for chart type switching
+        }
+
+        updateIndicators(indicator) {
+            console.log('Updating indicators to:', indicator);
+            // Implementation for indicator switching
+        }
+
+        startAutoRefresh() {
+            this.refreshInterval = setInterval(() => {
+                this.loadAllCharts();
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        stopAutoRefresh() {
+            if (this.refreshInterval) {
+                clearInterval(this.refreshInterval);
+                this.refreshInterval = null;
+            }
+        }
+    }
+
+    // Global functions
+    function selectTimeframe(timeframe) {
+        // Update button states
+        document.querySelectorAll('button[onclick^="selectTimeframe"]').forEach(btn => {
+            btn.classList.remove('text-white', 'bg-blue-600');
+            btn.classList.add('text-gray-600', 'bg-gray-100');
+        });
+
+        // Set active button
+        event.target.classList.remove('text-gray-600', 'bg-gray-100');
+        event.target.classList.add('text-white', 'bg-blue-600');
+
+        multiTimeframeCharts.currentTimeframe = timeframe;
+        multiTimeframeCharts.loadAllCharts();
+    }
+
+    function refreshChart(timeframe) {
+        multiTimeframeCharts.loadChart(timeframe);
+    }
+
+    function syncTimeframes() {
+        console.log('Syncing all timeframes...');
+        multiTimeframeCharts.loadAllCharts();
+        showNotification('Timeframes synced!', 'success');
+    }
+
+    function exportCharts() {
+        console.log('Exporting charts...');
+        showNotification('Charts exported!', 'success');
+    }
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                    type === 'error' ? 'bg-red-500 text-white' :
+                        'bg-blue-500 text-white'
+            }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Initialize
+    let multiTimeframeCharts;
+    document.addEventListener('DOMContentLoaded', function () {
+        multiTimeframeCharts = new MultiTimeframeCharts();
+        multiTimeframeCharts.init();
+    });
+</script>
+{% endblock %}

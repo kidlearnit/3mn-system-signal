@@ -1,0 +1,19 @@
+{% extends "layouts/base.html" %}
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-lg border-0 rounded-3">
+    <div class="card-body text-center">
+      <h1 class="card-title mb-4">📊 Main Controller Page</h1>
+      <p class="text-muted">Choose where to go:</p>
+      <div class="d-flex justify-content-center gap-3 mt-4">
+        <a href="/collector" class="btn btn-primary btn-lg px-4">
+          🚀 Go to Collector
+        </a>
+        <a href="/query" class="btn btn-success btn-lg px-4">
+          🔍 Go to Query Menu
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

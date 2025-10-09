@@ -1,0 +1,990 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Technical Indicators Configuration - Trading Signals{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-chart-line text-primary"></i>
+        Technical Indicators Configuration
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2" role="group">
+            <button type="button" class="btn btn-success" onclick="saveAllIndicators()">
+                <i class="fas fa-save"></i> Save All
+            </button>
+            <button type="button" class="btn btn-warning" onclick="resetToDefaults()">
+                <i class="fas fa-undo"></i> Reset Defaults
+            </button>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="testIndicators()">
+            <i class="fas fa-play"></i> Test Indicators
+        </button>
+    </div>
+</div>
+
+<!-- Symbol Selection -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-coins"></i> Symbol & Timeframe Selection
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="selectedSymbol">Symbol</label>
+                            <select class="form-select" id="selectedSymbol" onchange="loadIndicatorData()">
+                                <option value="AAPL" selected>AAPL - Apple Inc.</option>
+                                <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+                                <option value="MSFT">MSFT - Microsoft Corporation</option>
+                                <option value="TSLA">TSLA - Tesla Inc.</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="selectedTimeframe">Primary Timeframe</label>
+                            <select class="form-select" id="selectedTimeframe" onchange="loadIndicatorData()">
+                                <option value="1m">1 Minute</option>
+                                <option value="5m" selected>5 Minutes</option>
+                                <option value="15m">15 Minutes</option>
+                                <option value="1h">1 Hour</option>
+                                <option value="1D">1 Day</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="dataPeriod">Data Period</label>
+                            <select class="form-select" id="dataPeriod" onchange="loadIndicatorData()">
+                                <option value="100" selected>Last 100 periods</option>
+                                <option value="200">Last 200 periods</option>
+                                <option value="500">Last 500 periods</option>
+                                <option value="1000">Last 1000 periods</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="button" class="btn btn-info w-100" onclick="loadIndicatorData()">
+                                <i class="fas fa-sync-alt"></i> Refresh Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Indicators Configuration -->
+<div class="row">
+    <!-- MACD Configuration -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-area"></i> MACD (Moving Average Convergence Divergence)
+                </h6>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="macdEnabled" checked
+                        onchange="toggleIndicator('macd')">
+                    <label class="form-check-label" for="macdEnabled">Enabled</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="macdFastPeriod">Fast EMA Period</label>
+                            <input type="number" class="form-control" id="macdFastPeriod" value="12" min="1" max="50"
+                                onchange="updateMacdChart()">
+                            <small class="text-muted">Default: 12</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="macdSlowPeriod">Slow EMA Period</label>
+                            <input type="number" class="form-control" id="macdSlowPeriod" value="26" min="1" max="100"
+                                onchange="updateMacdChart()">
+                            <small class="text-muted">Default: 26</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="macdSignalPeriod">Signal Line Period</label>
+                            <input type="number" class="form-control" id="macdSignalPeriod" value="9" min="1" max="50"
+                                onchange="updateMacdChart()">
+                            <small class="text-muted">Default: 9</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MACD Chart -->
+                <div class="mt-3">
+                    <canvas id="macdChart" height="200"></canvas>
+                </div>
+
+                <!-- MACD Current Values -->
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="metric-value text-primary" id="macdValue">0.45</div>
+                            <div class="metric-label">MACD Line</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="metric-value text-warning" id="macdSignalValue">0.32</div>
+                            <div class="metric-label">Signal Line</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="metric-value text-info" id="macdHistValue">0.13</div>
+                            <div class="metric-label">Histogram</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RSI Configuration -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line"></i> RSI (Relative Strength Index)
+                </h6>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="rsiEnabled" checked
+                        onchange="toggleIndicator('rsi')">
+                    <label class="form-check-label" for="rsiEnabled">Enabled</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="rsiPeriod">RSI Period</label>
+                            <input type="number" class="form-control" id="rsiPeriod" value="14" min="1" max="50"
+                                onchange="updateRsiChart()">
+                            <small class="text-muted">Default: 14</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="rsiOverbought">Overbought Level</label>
+                            <input type="number" class="form-control" id="rsiOverbought" value="70" min="50" max="100"
+                                onchange="updateRsiChart()">
+                            <small class="text-muted">Default: 70</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="rsiOversold">Oversold Level</label>
+                            <input type="number" class="form-control" id="rsiOversold" value="30" min="0" max="50"
+                                onchange="updateRsiChart()">
+                            <small class="text-muted">Default: 30</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RSI Chart -->
+                <div class="mt-3">
+                    <canvas id="rsiChart" height="200"></canvas>
+                </div>
+
+                <!-- RSI Current Value -->
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="text-center">
+                            <div class="metric-value text-success" id="rsiValue">58.4</div>
+                            <div class="metric-label">Current RSI</div>
+                            <div class="mt-2">
+                                <span class="badge bg-success" id="rsiStatus">Neutral</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Bollinger Bands Configuration -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i> Bollinger Bands
+                </h6>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="bbEnabled" onchange="toggleIndicator('bb')">
+                    <label class="form-check-label" for="bbEnabled">Enabled</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="bbPeriod">Period</label>
+                            <input type="number" class="form-control" id="bbPeriod" value="20" min="1" max="50"
+                                onchange="updateBbChart()">
+                            <small class="text-muted">Default: 20</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="bbStdDev">Standard Deviation</label>
+                            <input type="number" class="form-control" id="bbStdDev" value="2" min="1" max="5" step="0.1"
+                                onchange="updateBbChart()">
+                            <small class="text-muted">Default: 2</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group mb-3">
+                            <label for="bbMaType">MA Type</label>
+                            <select class="form-select" id="bbMaType" onchange="updateBbChart()">
+                                <option value="SMA" selected>Simple MA</option>
+                                <option value="EMA">Exponential MA</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bollinger Bands Chart -->
+                <div class="mt-3">
+                    <canvas id="bbChart" height="200"></canvas>
+                </div>
+
+                <!-- BB Current Values -->
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="metric-value text-danger" id="bbUpperValue">155.2</div>
+                            <div class="metric-label">Upper Band</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="metric-value text-warning" id="bbMiddleValue">150.5</div>
+                            <div class="metric-label">Middle Band</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="metric-value text-success" id="bbLowerValue">145.8</div>
+                            <div class="metric-label">Lower Band</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Moving Averages Configuration -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-area"></i> Moving Averages
+                </h6>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="maEnabled" checked
+                        onchange="toggleIndicator('ma')">
+                    <label class="form-check-label" for="maEnabled">Enabled</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="smaPeriod">SMA Period</label>
+                            <input type="number" class="form-control" id="smaPeriod" value="50" min="1" max="200"
+                                onchange="updateMaChart()">
+                            <small class="text-muted">Default: 50</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="emaPeriod">EMA Period</label>
+                            <input type="number" class="form-control" id="emaPeriod" value="21" min="1" max="100"
+                                onchange="updateMaChart()">
+                            <small class="text-muted">Default: 21</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Moving Averages Chart -->
+                <div class="mt-3">
+                    <canvas id="maChart" height="200"></canvas>
+                </div>
+
+                <!-- MA Current Values -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <div class="metric-value text-info" id="smaValue">149.8</div>
+                            <div class="metric-label">SMA(50)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-center">
+                            <div class="metric-value text-warning" id="emaValue">151.2</div>
+                            <div class="metric-label">EMA(21)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advanced Indicators -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-cogs"></i> Advanced Indicators
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="stochK">Stochastic %K</label>
+                            <input type="number" class="form-control" id="stochK" value="14" min="1" max="50">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="stochD">Stochastic %D</label>
+                            <input type="number" class="form-control" id="stochD" value="3" min="1" max="20">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="williamsR">Williams %R</label>
+                            <input type="number" class="form-control" id="williamsR" value="14" min="1" max="50">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group mb-3">
+                            <label for="cci">Commodity Channel Index</label>
+                            <input type="number" class="form-control" id="cci" value="20" min="1" max="50">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Testing Panel -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-play-circle"></i> Live Testing & Validation
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="indicatorTestTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Indicator</th>
+                                        <th>Current Value</th>
+                                        <th>Threshold</th>
+                                        <th>Condition</th>
+                                        <th>Status</th>
+                                        <th>Signal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>MACD</td>
+                                        <td>0.45</td>
+                                        <td>>= 0.5</td>
+                                        <td>MACD > Signal</td>
+                                        <td><span class="badge bg-warning">Near</span></td>
+                                        <td><span class="badge bg-secondary">Hold</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>RSI</td>
+                                        <td>58.4</td>
+                                        <td>30-70</td>
+                                        <td>Neutral Zone</td>
+                                        <td><span class="badge bg-success">OK</span></td>
+                                        <td><span class="badge bg-secondary">Hold</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Bollinger Bands</td>
+                                        <td>152.8</td>
+                                        <td>145.8-155.2</td>
+                                        <td>Within Bands</td>
+                                        <td><span class="badge bg-success">OK</span></td>
+                                        <td><span class="badge bg-secondary">Hold</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>SMA(50)</td>
+                                        <td>149.8</td>
+                                        <td>Price > SMA</td>
+                                        <td>152.8 > 149.8</td>
+                                        <td><span class="badge bg-success">OK</span></td>
+                                        <td><span class="badge bg-success">Buy</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Overall Signal</h5>
+                                <div class="metric-value text-success" id="overallSignal">BUY</div>
+                                <div class="metric-label">Confidence: 75%</div>
+
+                                <hr>
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" onclick="executeSignal()">
+                                        <i class="fas fa-play"></i> Execute Signal
+                                    </button>
+                                    <button class="btn btn-info" onclick="saveAsStrategy()">
+                                        <i class="fas fa-save"></i> Save as Strategy
+                                    </button>
+                                    <button class="btn btn-warning" onclick="backtestConfiguration()">
+                                        <i class="fas fa-chart-line"></i> Backtest
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--accent-color);
+        border-color: var(--accent-color);
+    }
+
+    .card {
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .table th {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        font-weight: 600;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let macdChart, rsiChart, bbChart, maChart;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeCharts();
+        loadIndicatorData();
+        startLiveUpdates();
+    });
+
+    // Initialize charts
+    function initializeCharts() {
+        // MACD Chart
+        const macdCtx = document.getElementById('macdChart').getContext('2d');
+        macdChart = new Chart(macdCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'MACD',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Signal',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Histogram',
+                    data: [],
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    type: 'bar'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // RSI Chart
+        const rsiCtx = document.getElementById('rsiChart').getContext('2d');
+        rsiChart = new Chart(rsiCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'RSI',
+                    data: [],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Bollinger Bands Chart
+        const bbCtx = document.getElementById('bbChart').getContext('2d');
+        bbChart = new Chart(bbCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Price',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Upper Band',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.1
+                }, {
+                    label: 'Lower Band',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Moving Averages Chart
+        const maCtx = document.getElementById('maChart').getContext('2d');
+        maChart = new Chart(maCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Price',
+                    data: [],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'SMA',
+                    data: [],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'EMA',
+                    data: [],
+                    borderColor: 'rgb(255, 205, 86)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // Load indicator data
+    async function loadIndicatorData() {
+        const symbol = document.getElementById('selectedSymbol').value;
+        const timeframe = document.getElementById('selectedTimeframe').value;
+
+        if (!symbol) {
+            showToast('Please select a symbol', 'warning');
+            return;
+        }
+
+        try {
+            // Load real data from database
+            const response = await fetch(`/api/real/chart-data?symbol=${symbol}&timeframe=${timeframe}&limit=100`);
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                updateIndicatorValues(data.data);
+                updateCharts(data.data);
+                updateTestTable(data.data);
+            } else {
+                showToast('Error loading data: ' + data.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Error loading indicator data:', error);
+            showToast('Error loading indicator data', 'danger');
+        }
+    }
+
+    // Update indicator values
+    function updateIndicatorValues(data) {
+        // Check if data is provided
+        if (!data) {
+            console.warn('No data provided to updateIndicatorValues');
+            return;
+        }
+
+        // Update MACD values from real data
+        if (data.macd && data.macd.length > 0) {
+            const latestMacd = data.macd[data.macd.length - 1];
+            document.getElementById('macdValue').textContent = latestMacd.macd.toFixed(4);
+            document.getElementById('macdSignalValue').textContent = latestMacd.macd_signal.toFixed(4);
+            document.getElementById('macdHistValue').textContent = latestMacd.histogram.toFixed(4);
+        }
+
+        // Update RSI (try to get real data first)
+        let rsiValue;
+        if (data.indicators && data.indicators.rsi) {
+            rsiValue = data.indicators.rsi;
+        } else {
+            // Fallback to mock data
+            rsiValue = Math.random() * 100;
+        }
+        document.getElementById('rsiValue').textContent = rsiValue.toFixed(1);
+
+        // Update RSI status
+        const rsiStatus = document.getElementById('rsiStatus');
+        if (rsiValue > 70) {
+            rsiStatus.textContent = 'Overbought';
+            rsiStatus.className = 'badge bg-danger';
+        } else if (rsiValue < 30) {
+            rsiStatus.textContent = 'Oversold';
+            rsiStatus.className = 'badge bg-success';
+        } else {
+            rsiStatus.textContent = 'Neutral';
+            rsiStatus.className = 'badge bg-warning';
+        }
+
+        // Update Bollinger Bands (try to get real data first)
+        let basePrice;
+        if (data.indicators && data.indicators.bollinger) {
+            document.getElementById('bbUpperValue').textContent = data.indicators.bollinger.upper.toFixed(2);
+            document.getElementById('bbMiddleValue').textContent = data.indicators.bollinger.middle.toFixed(2);
+            document.getElementById('bbLowerValue').textContent = data.indicators.bollinger.lower.toFixed(2);
+            basePrice = data.indicators.bollinger.middle;
+        } else {
+            // Fallback to mock data
+            basePrice = data.candles && data.candles.length > 0 ?
+                data.candles[data.candles.length - 1].close : 150;
+            document.getElementById('bbUpperValue').textContent = (basePrice + 5).toFixed(2);
+            document.getElementById('bbMiddleValue').textContent = basePrice.toFixed(2);
+            document.getElementById('bbLowerValue').textContent = (basePrice - 5).toFixed(2);
+        }
+
+        // Update Moving Averages (try to get real data first)
+        if (data.indicators && data.indicators.sma) {
+            document.getElementById('smaValue').textContent = data.indicators.sma.toFixed(2);
+        } else {
+            document.getElementById('smaValue').textContent = (basePrice - 2).toFixed(2);
+        }
+
+        if (data.indicators && data.indicators.ema) {
+            document.getElementById('emaValue').textContent = data.indicators.ema.toFixed(2);
+        } else {
+            document.getElementById('emaValue').textContent = (basePrice - 1).toFixed(2);
+        }
+    }
+
+    // Update charts
+    function updateCharts(data) {
+        // Check if data is provided
+        if (!data) {
+            console.warn('No data provided to updateCharts');
+            return;
+        }
+
+        // Update MACD chart with real data
+        if (data.macd && data.macd.length > 0) {
+            const labels = data.macd.map(item => new Date(item.timestamp));
+            const macdData = data.macd.map(item => item.macd);
+            const signalData = data.macd.map(item => item.macd_signal);
+            const histData = data.macd.map(item => item.histogram);
+
+            macdChart.data.labels = labels;
+            macdChart.data.datasets[0].data = macdData;
+            macdChart.data.datasets[1].data = signalData;
+            macdChart.data.datasets[2].data = histData;
+            macdChart.update();
+        }
+
+        // Update RSI chart (mock for now)
+        const labels = data.macd ? data.macd.map(item => new Date(item.timestamp)) : [];
+        const rsiData = labels.map(() => Math.random() * 100);
+        rsiChart.data.labels = labels;
+        rsiChart.data.datasets[0].data = rsiData;
+        rsiChart.update();
+
+        // Update Bollinger Bands chart with real price data
+        if (data.candles && data.candles.length > 0) {
+            const priceLabels = data.candles.map(item => new Date(item.timestamp));
+            const priceData = data.candles.map(item => item.close);
+            const upperData = priceData.map(p => p + 5);
+            const lowerData = priceData.map(p => p - 5);
+
+            bbChart.data.labels = priceLabels;
+            bbChart.data.datasets[0].data = priceData;
+            bbChart.data.datasets[1].data = upperData;
+            bbChart.data.datasets[2].data = lowerData;
+            bbChart.update();
+        }
+
+        // Update Moving Averages chart with real price data
+        if (data.candles && data.candles.length > 0) {
+            const priceLabels = data.candles.map(item => new Date(item.timestamp));
+            const priceData = data.candles.map(item => item.close);
+            const smaData = priceData.map(p => p - 2);
+            const emaData = priceData.map(p => p - 1);
+
+            maChart.data.labels = priceLabels;
+            maChart.data.datasets[0].data = priceData;
+            maChart.data.datasets[1].data = smaData;
+            maChart.data.datasets[2].data = emaData;
+            maChart.update();
+        }
+    }
+
+    // Update test table
+    function updateTestTable(data) {
+        // Check if data is provided
+        if (!data) {
+            console.warn('No data provided to updateTestTable');
+            return;
+        }
+
+        const rows = document.querySelectorAll('#indicatorTestTable tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 6) {
+                // Update current values
+                if (cells[0].textContent === 'MACD') {
+                    cells[1].textContent = document.getElementById('macdValue').textContent;
+                } else if (cells[0].textContent === 'RSI') {
+                    cells[1].textContent = document.getElementById('rsiValue').textContent;
+                } else if (cells[0].textContent === 'Bollinger Bands') {
+                    cells[1].textContent = document.getElementById('bbMiddleValue').textContent;
+                } else if (cells[0].textContent === 'SMA(50)') {
+                    cells[1].textContent = document.getElementById('smaValue').textContent;
+                }
+            }
+        });
+    }
+
+    // Toggle indicator
+    function toggleIndicator(indicator) {
+        const enabled = document.getElementById(indicator + 'Enabled').checked;
+        const card = document.getElementById(indicator + 'Enabled').closest('.card');
+
+        if (enabled) {
+            card.style.opacity = '1';
+        } else {
+            card.style.opacity = '0.6';
+        }
+
+        showToast(`${indicator.toUpperCase()} ${enabled ? 'enabled' : 'disabled'}`, 'info');
+    }
+
+    // Chart update functions
+    function updateMacdChart() {
+        const fastPeriod = document.getElementById('macdFastPeriod').value;
+        const slowPeriod = document.getElementById('macdSlowPeriod').value;
+        const signalPeriod = document.getElementById('macdSignalPeriod').value;
+
+        console.log(`Updating MACD: Fast=${fastPeriod}, Slow=${slowPeriod}, Signal=${signalPeriod}`);
+        updateCharts();
+    }
+
+    function updateRsiChart() {
+        const period = document.getElementById('rsiPeriod').value;
+        const overbought = document.getElementById('rsiOverbought').value;
+        const oversold = document.getElementById('rsiOversold').value;
+
+        console.log(`Updating RSI: Period=${period}, Overbought=${overbought}, Oversold=${oversold}`);
+        updateCharts();
+    }
+
+    function updateBbChart() {
+        const period = document.getElementById('bbPeriod').value;
+        const stdDev = document.getElementById('bbStdDev').value;
+        const maType = document.getElementById('bbMaType').value;
+
+        console.log(`Updating Bollinger Bands: Period=${period}, StdDev=${stdDev}, MA=${maType}`);
+        updateCharts();
+    }
+
+    function updateMaChart() {
+        const smaPeriod = document.getElementById('smaPeriod').value;
+        const emaPeriod = document.getElementById('emaPeriod').value;
+
+        console.log(`Updating Moving Averages: SMA=${smaPeriod}, EMA=${emaPeriod}`);
+        updateCharts();
+    }
+
+    // Start live updates
+    function startLiveUpdates() {
+        setInterval(() => {
+            // Only update if we have data loaded
+            const symbol = document.getElementById('selectedSymbol').value;
+            if (symbol) {
+                loadIndicatorData();
+            }
+        }, 5000); // Update every 5 seconds
+    }
+
+    // Actions
+    function saveAllIndicators() {
+        const config = {
+            macd: {
+                fastPeriod: document.getElementById('macdFastPeriod').value,
+                slowPeriod: document.getElementById('macdSlowPeriod').value,
+                signalPeriod: document.getElementById('macdSignalPeriod').value,
+                enabled: document.getElementById('macdEnabled').checked
+            },
+            rsi: {
+                period: document.getElementById('rsiPeriod').value,
+                overbought: document.getElementById('rsiOverbought').value,
+                oversold: document.getElementById('rsiOversold').value,
+                enabled: document.getElementById('rsiEnabled').checked
+            },
+            bb: {
+                period: document.getElementById('bbPeriod').value,
+                stdDev: document.getElementById('bbStdDev').value,
+                maType: document.getElementById('bbMaType').value,
+                enabled: document.getElementById('bbEnabled').checked
+            },
+            ma: {
+                smaPeriod: document.getElementById('smaPeriod').value,
+                emaPeriod: document.getElementById('emaPeriod').value,
+                enabled: document.getElementById('maEnabled').checked
+            }
+        };
+
+        console.log('Saving indicator configuration:', config);
+        showToast('Indicator configuration saved successfully', 'success');
+    }
+
+    function resetToDefaults() {
+        if (confirm('Are you sure you want to reset all indicators to default values?')) {
+            // Reset MACD
+            document.getElementById('macdFastPeriod').value = '12';
+            document.getElementById('macdSlowPeriod').value = '26';
+            document.getElementById('macdSignalPeriod').value = '9';
+
+            // Reset RSI
+            document.getElementById('rsiPeriod').value = '14';
+            document.getElementById('rsiOverbought').value = '70';
+            document.getElementById('rsiOversold').value = '30';
+
+            // Reset Bollinger Bands
+            document.getElementById('bbPeriod').value = '20';
+            document.getElementById('bbStdDev').value = '2';
+
+            // Reset Moving Averages
+            document.getElementById('smaPeriod').value = '50';
+            document.getElementById('emaPeriod').value = '21';
+
+            updateCharts();
+            showToast('Indicators reset to defaults', 'warning');
+        }
+    }
+
+    function testIndicators() {
+        showToast('Testing indicators...', 'info');
+        const symbol = document.getElementById('selectedSymbol').value;
+        if (symbol) {
+            loadIndicatorData();
+        } else {
+            showToast('Please select a symbol first', 'warning');
+        }
+    }
+
+    function executeSignal() {
+        showToast('Executing signal...', 'success');
+    }
+
+    function saveAsStrategy() {
+        showToast('Saving as strategy...', 'info');
+    }
+
+    function backtestConfiguration() {
+        showToast('Running backtest...', 'info');
+    }
+</script>
+{% endblock %}

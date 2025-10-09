@@ -1,0 +1,27 @@
+{
+  "strategy_name": "Custom MACD Strategy",
+  "description": "Custom MACD strategy for specific symbol",
+  "thresholds": [
+    {
+      "timeframe": "1D4hr",
+      "indicator": "fmacd",
+      "zone": "bull",
+      "comparison": ">=",
+      "min_value": 2.0
+    },
+    {
+      "timeframe": "1D4hr",
+      "indicator": "fmacd",
+      "zone": "bear",
+      "comparison": "<=",
+      "min_value": -2.0
+    },
+    {
+      "timeframe": "1D1hr",
+      "indicator": "bars",
+      "zone": "StrongWind",
+      "comparison": ">=",
+      "min_value": 2.0
+    }
+  ]
+}

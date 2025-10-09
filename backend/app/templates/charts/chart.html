@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TradingView Chart with Yahoo Finance Data</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.3/dist/full.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            },
+            daisyui: {
+                themes: [
+                    {
+                        light: {
+                            "primary": "#0ea5e9",
+                            "secondary": "#6366f1",
+                            "accent": "#22d3ee",
+                            "neutral": "#1f2937",
+                            "base-100": "#f3f4f6",
+                            "base-200": "#e5e7eb",
+                            "base-300": "#d1d5db",
+                            "info": "#3b82f6",
+                            "success": "#10b981",
+                            "warning": "#f59e0b",
+                            "error": "#ef4444",
+                        },
+                        dark: {
+                            "primary": "#38bdf8",
+                            "secondary": "#818cf8",
+                            "accent": "#67e8f9",
+                            "neutral": "#f3f4f6",
+                            "base-100": "#1f2937",
+                            "base-200": "#111827",
+                            "base-300": "#0f172a",
+                            "info": "#60a5fa",
+                            "success": "#34d399",
+                            "warning": "#fbbf24",
+                            "error": "#f87171",
+                        }
+                    }
+                ],
+            },
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.5s ease, color 0.5s ease;
+            overflow: hidden;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .watchlist {
+            width: 240px;
+            transition: all 0.3s ease;
+            border-left: 1px solid rgba(209, 213, 219, 0.5);
+        }
+
+        .dark .watchlist {
+            border-left: 1px solid rgba(55, 65, 81, 0.7);
+        }
+
+        /* Three Chart Layout Styles */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            height: 92vh;
+            border-top: 1px solid rgba(209, 213, 219, 0.3);
+        }
+
+        .chart-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            border-right: 1px solid rgba(209, 213, 219, 0.3);
+        }
+
+        .chart-column:last-child {
+            border-right: none;
+        }
+
+        .dark .chart-grid {
+            border-top: 1px solid rgba(55, 65, 81, 0.5);
+        }
+
+        .dark .chart-column {
+            border-right: 1px solid rgba(55, 65, 81, 0.5);
+        }
+
+        .chart-main {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .chart-macd {
+            height: 300px;
+            min-height: 300px;
+        }
+
+        .interval-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 12px;
+            margin-bottom: 0;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 0;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: none;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .dark .interval-badge {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.05);
+            border-bottom: none;
+        }
+
+        @media (max-width: 1024px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .chart-column {
+                height: 60vh;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+                gap: 8px;
+            }
+
+            .chart-column {
+                height: 50vh;
+                border-right: none;
+                border-bottom: 1px solid rgba(209, 213, 219, 0.3);
+            }
+
+            .chart-column:last-child {
+                border-bottom: none;
+            }
+
+            .dark .chart-column {
+                border-bottom: 1px solid rgba(55, 65, 81, 0.5);
+            }
+
+            .chart-main {
+                height: 70%;
+            }
+
+            .chart-macd {
+                height: 30%;
+                min-height: 120px;
+            }
+
+            .interval-badge {
+                font-size: 10px;
+                margin-bottom: 1px;
+                padding: 3px 6px;
+            }
+
+            .watchlist {
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 50;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .drawer-open .watchlist {
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar {
+                flex-wrap: wrap;
+                min-height: auto;
+                padding: 8px;
+            }
+
+            .navbar>div {
+                flex: 1 1 100%;
+                margin-bottom: 4px;
+            }
+
+            .navbar .flex-1 {
+                flex: 1 1 100%;
+                justify-content: flex-start;
+                gap: 4px;
+            }
+
+            .form-control {
+                margin-bottom: 4px;
+            }
+
+            .chart-column {
+                height: 45vh;
+            }
+
+            .chart-main {
+                height: 65%;
+            }
+
+            .chart-macd {
+                height: 35%;
+                min-height: 100px;
+            }
+        }
+
+        .watchlist-item {
+            padding: 12px;
+            margin: 4px 0;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .watchlist-item:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-container {
+            transition: height 0.5s ease;
+            position: relative;
+        }
+
+        .button-shine {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button-shine::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%);
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        .button-shine:hover::after {
+            opacity: 1;
+            transform: rotate(45deg) translate(50%, -50%);
+        }
+
+        input,
+        select {
+            transition: all 0.2s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.5);
+            border-color: #3b82f6;
+        }
+
+        /* Symbol removal animation */
+        .animate-fade-out {
+            transition: all 0.3s ease-out;
+        }
+
+        /* Highlight the active symbol in watchlist */
+        .card.border-primary {
+            border-width: 2px !important;
+            box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.2);
+        }
+
+        /* Smooth mode transition animations */
+        .chart-container {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .mode-loading-overlay {
+            backdrop-filter: blur(2px);
+            transition: opacity 0.3s ease;
+        }
+
+        /* Smooth select transition */
+        select {
+            transition: all 0.2s ease;
+        }
+
+        select:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.3);
+        }
+
+        /* Loading skeleton for charts */
+        .chart-skeleton {
+            background: linear-gradient(90deg,
+                    rgba(209, 213, 219, 0.2) 25%,
+                    rgba(209, 213, 219, 0.4) 50%,
+                    rgba(209, 213, 219, 0.2) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+
+        .dark .chart-skeleton {
+            background: linear-gradient(90deg,
+                    rgba(55, 65, 81, 0.2) 25%,
+                    rgba(55, 65, 81, 0.4) 50%,
+                    rgba(55, 65, 81, 0.2) 75%);
+            background-size: 200% 100%;
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Smooth badge transition */
+        .interval-badge {
+            transition: all 0.2s ease;
+        }
+
+        .interval-badge:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .interval-badge:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Real-time indicator animation */
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        .realtime-indicator {
+            animation: fadeInOut 2s ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen animate-fade-in" data-theme="light">
+    <div class="drawer lg:drawer-open">
+        <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+
+        <!-- Page content goes here -->
+        <div class="drawer-content flex flex-col h-screen">
+            <!-- Combined Header with Controls -->
+            <div class="bg-base-100 shadow-md z-50">
+                <!-- Combined Header with Controls -->
+                <div class="navbar min-h-10 px-3">
+                    <!-- Left: Mobile menu + Title -->
+                    <div class="flex items-center gap-2">
+                        <div class="flex-none lg:hidden">
+                            <label for="drawer-toggle" class="btn btn-square btn-ghost btn-xs drawer-button">
+                                <i class="fas fa-bars text-xs"></i>
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <i class="fas fa-chart-line text-primary text-sm"></i>
+                            <h1 class="text-xs font-bold">YahooFinance <span class="text-primary">Charts</span></h1>
+                        </div>
+
+                        <!-- Mobile Dashboard Button -->
+                        <div class="flex-none lg:hidden">
+                            <a href="/dashboard" class="btn btn-square btn-ghost btn-xs">
+                                <i class="fas fa-home text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Center: Controls -->
+                    <div class="flex-1 flex items-center justify-center gap-2">
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs font-medium">Symbol:</span>
+                                <select id="ticker" class="select select-bordered select-xs w-20 text-xs">
+                                    <option value="AAPL">AAPL</option>
+                                    <option value="NVDA" selected>NVDA</option>
+                                    <option value="TSLA">TSLA</option>
+                                    <option value="MSFT">MSFT</option>
+                                    <option value="GOOGL">GOOGL</option>
+                                    <option value="AMZN">AMZN</option>
+                                    <option value="META">META</option>
+                                    <option value="NFLX">NFLX</option>
+                                    <option value="AMD">AMD</option>
+                                    <option value="INTC">INTC</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs font-medium">Mode:</span>
+                                <select id="timeframeMode"
+                                    class="select select-bordered select-xs w-20 text-xs hover:shadow-md transition-all duration-200">
+                                    <option value="short">Short</option>
+                                    <option value="core" selected>Core</option>
+                                    <option value="long">Long</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs font-medium">Live:</span>
+                                <button id="toggleRealtime" class="btn btn-xs btn-outline">
+                                    <span id="subscription-status" class="text-warning">⏸️</span>
+                                </button>
+                                <span id="websocket-status" class="text-error text-xs">🔴</span>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <button id="testWebSocket" class="btn btn-xs btn-info">
+                                    <span class="text-xs">Test</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <button id="cacheStats" class="btn btn-xs btn-success">
+                                    <span class="text-xs">Cache</span>
+                                </button>
+                            </div>
+                        </div>
+
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs font-medium">EMA:</span>
+                                <input type="number" id="emaPeriod" class="input input-bordered input-xs w-12 text-xs"
+                                    value="20" min="1" max="200" />
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs font-medium">RSI:</span>
+                                <input type="number" id="rsiPeriod" class="input input-bordered input-xs w-12 text-xs"
+                                    value="14" min="1" max="200" />
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <input type="checkbox" id="autoUpdate" class="toggle toggle-primary toggle-xs" />
+                                <span class="text-xs font-medium">Auto</span>
+                                <input type="number" id="updateFrequency"
+                                    class="input input-bordered input-xs w-10 text-xs" value="60" min="1" />
+                                <span class="text-xs">s</span>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <input type="checkbox" id="showBB" class="toggle toggle-secondary toggle-xs" checked />
+                                <span class="text-xs font-medium">BB</span>
+                            </div>
+                        </div>
+
+                        <div class="form-control">
+                            <div class="flex items-center gap-1">
+                                <input type="checkbox" id="showSR" class="toggle toggle-accent toggle-xs" />
+                                <span class="text-xs font-medium">S/R</span>
+                            </div>
+                        </div>
+
+                        <button id="fetchData" class="btn btn-primary btn-xs gap-1">
+                            <i class="fas fa-sync-alt text-xs"></i>
+                            <span class="text-xs">Fetch</span>
+                        </button>
+                    </div>
+
+                    <!-- Right: Settings and Theme Toggle -->
+                    <div class="flex-none flex items-center gap-1">
+                        <!-- Market Status Indicator -->
+                        <div id="marketStatus" class="badge badge-ghost">
+                            <span class="text-xs">🔴 Market Closed</span>
+                        </div>
+
+                        <!-- Dashboard Button -->
+                        <a href="/dashboard" class="btn btn-xs btn-primary gap-1">
+                            <i class="fas fa-home text-xs"></i>
+                            <span class="hidden md:inline text-xs">Dashboard</span>
+                        </a>
+
+                        <!-- Indicators Panel -->
+                        <div class="dropdown dropdown-end" id="indicatorsDropdown">
+                            <div tabindex="0" role="button" class="btn btn-xs btn-ghost gap-1">
+                                <i class="fas fa-chart-line text-xs"></i>
+                                <span class="hidden md:inline text-xs">Indicators</span>
+                            </div>
+                            <div class="dropdown-content z-[99999] menu p-2 shadow bg-base-100 rounded-box w-96"
+                                style="z-index: 99999 !important; position: absolute !important;">
+                                <div class="space-y-4">
+                                    <!-- Applied Indicators -->
+                                    <div>
+                                        <h3 class="font-semibold text-sm mb-2">Applied Indicators</h3>
+                                        <div id="appliedIndicators" class="space-y-1">
+                                            <!-- Applied indicators will be populated here -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Search -->
+                                    <div class="form-control">
+                                        <div class="relative">
+                                            <input type="text" id="indicatorSearch" placeholder="Search indicators"
+                                                class="input input-bordered input-sm w-full pl-8" />
+                                            <i
+                                                class="fas fa-search absolute left-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-400"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Commonly Used -->
+                                    <div>
+                                        <h3 class="font-semibold text-sm mb-2">Commonly Used</h3>
+                                        <div class="space-y-1">
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('ma')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                Moving Average
+                                            </button>
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('ema')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                Exponential Moving Average
+                                            </button>
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('rsi')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                RSI
+                                            </button>
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('macd')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                MACD
+                                            </button>
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('bb')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                Bollinger Bands
+                                            </button>
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('stoch')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                Stochastic
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Volume Indicators -->
+                                    <div>
+                                        <h3 class="font-semibold text-sm mb-2">Volume</h3>
+                                        <div class="space-y-1">
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('volume')">
+                                                <i class="fas fa-chart-bar text-xs mr-2"></i>
+                                                Volume
+                                            </button>
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('obv')">
+                                                <i class="fas fa-chart-bar text-xs mr-2"></i>
+                                                On Balance Volume
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Momentum -->
+                                    <div>
+                                        <h3 class="font-semibold text-sm mb-2">Momentum</h3>
+                                        <div class="space-y-1">
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('williams')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                Williams %R
+                                            </button>
+                                            <button class="btn btn-sm btn-ghost w-full justify-start"
+                                                onclick="addIndicator('cci')">
+                                                <i class="fas fa-chart-line text-xs mr-2"></i>
+                                                Commodity Channel Index
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Settings Dropdown -->
+                        <div class="dropdown dropdown-end">
+                            <div tabindex="0" role="button" class="btn btn-xs btn-ghost gap-1">
+                                <i class="fas fa-cog text-xs"></i>
+                                <span class="hidden md:inline text-xs">Settings</span>
+                            </div>
+                            <div tabindex="0"
+                                class="dropdown-content z-[9999] menu p-2 shadow bg-base-100 rounded-box w-80">
+                                <div class="space-y-4">
+                                    <!-- Presets -->
+                                    <div>
+                                        <h3 class="font-semibold text-sm mb-2">Presets</h3>
+                                        <div class="flex gap-1">
+                                            <button id="presetDefault" class="btn btn-xs btn-outline flex-1">
+                                                <span class="text-xs">Default</span>
+                                            </button>
+                                            <button id="presetClean" class="btn btn-xs btn-outline flex-1">
+                                                <span class="text-xs">Clean</span>
+                                            </button>
+                                            <button id="presetTechnical" class="btn btn-xs btn-outline flex-1">
+                                                <span class="text-xs">Technical</span>
+                                            </button>
+                                        </div>
+                                        <div class="text-[10px] opacity-60 mt-1">
+                                            <span id="currentPreset">Current: Default</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Chart Preferences -->
+                                    <div>
+                                        <h3 class="font-semibold text-sm mb-2">Chart Preferences</h3>
+                                        <div class="space-y-2">
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="showCrosshair" class="checkbox checkbox-sm"
+                                                    checked />
+                                                <span class="text-xs">Show crosshair</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="stickyCrosshair" class="checkbox checkbox-sm"
+                                                    checked />
+                                                <span class="text-xs">Sticky crosshair</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="crosshairMagnet" class="checkbox checkbox-sm"
+                                                    checked />
+                                                <span class="text-xs">Magnet to data</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="grayBackgroundStrips"
+                                                    class="checkbox checkbox-sm" />
+                                                <span class="text-xs">Gray background strips</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="rangeSlider" class="checkbox checkbox-sm" />
+                                                <span class="text-xs">Range slider</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="extendedHours"
+                                                    class="checkbox checkbox-sm" />
+                                                <span class="text-xs">Extended Hours</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="hideOutliers" class="checkbox checkbox-sm" />
+                                                <span class="text-xs">Hide outliers</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Y-axis Scale -->
+                                    <div>
+                                        <h3 class="font-semibold text-sm mb-2">Y-axis scale</h3>
+                                        <div class="space-y-2">
+                                            <label class="flex items-center gap-2">
+                                                <input type="radio" name="yScaleMode" value="linear"
+                                                    class="radio radio-sm" checked />
+                                                <span class="text-xs">Linear</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="radio" name="yScaleMode" value="logarithmic"
+                                                    class="radio radio-sm" />
+                                                <span class="text-xs">Logarithmic</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="radio" name="yScaleMode" value="percentage"
+                                                    class="radio radio-sm" />
+                                                <span class="text-xs">Percentage</span>
+                                            </label>
+                                            <label class="flex items-center gap-2">
+                                                <input type="checkbox" id="invertScale" class="checkbox checkbox-sm" />
+                                                <span class="text-xs">Invert</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="divider my-2"></div>
+                                    <div class="flex gap-2">
+                                        <button id="resetSettings" class="btn btn-xs btn-outline flex-1">
+                                            <i class="fas fa-undo text-xs"></i>
+                                            <span class="text-xs">Reset</span>
+                                        </button>
+                                        <button id="resetView" class="btn btn-xs btn-accent flex-1">
+                                            <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                            <span class="text-xs">Reset view</span>
+                                        </button>
+                                        <button id="closeSettings" class="btn btn-xs btn-primary flex-1">
+                                            <span class="text-xs">Close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Theme Toggle -->
+                        <button id="themeToggle" class="btn btn-xs btn-ghost gap-1">
+                            <i class="fas fa-moon dark-icon text-xs"></i>
+                            <i class="fas fa-sun light-icon hidden text-xs"></i>
+                            <span class="hidden md:inline text-xs">Theme</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Three Chart Layout -->
+            <div class="chart-grid">
+                <!-- Chart 1: 2 minutes -->
+                <div class="chart-column">
+                    <div class="interval-badge">
+                        <span class="text-primary font-semibold">2m</span>
+                    </div>
+                    <div id="chart1" class="chart-main chart-container bg-base-100 border-t border-base-300 relative">
+                        <div id="priceInfo1"
+                            class="absolute top-1 left-1 bg-white bg-opacity-20 backdrop-blur-sm text-black text-xs px-1 py-0.5 rounded z-10 font-mono border border-black border-opacity-20">
+                            <span>O:<span id="open1">-</span></span> |
+                            <span>H:<span id="high1">-</span></span> |
+                            <span>L:<span id="low1">-</span></span> |
+                            <span>C:<span id="close1">-</span></span> |
+                            <span>V:<span id="volume1">-</span></span>
+                        </div>
+                        <div id="indicatorInfoContainer1" class="absolute top-6 left-1 z-50"
+                            style="display: flex; flex-direction: column; gap: 1px;">
+                            <!-- Individual indicator info will be added here dynamically -->
+                        </div>
+                    </div>
+                    <div id="macdChart1"
+                        class="chart-macd chart-container mr-0 bg-base-100 border-t border-base-300 relative">
+                        <div id="macdInfo1"
+                            class="absolute top-1 left-1 bg-white bg-opacity-20 backdrop-blur-sm text-black text-xs px-1 py-0.5 rounded z-10 font-mono border border-black border-opacity-20">
+                            <span>MACD(12,26,9): <span id="macdValues1">- - -</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 2: 5 minutes -->
+                <div class="chart-column">
+                    <div class="interval-badge">
+                        <span class="text-secondary font-semibold">5m</span>
+                    </div>
+                    <div id="chart2" class="chart-main chart-container bg-base-100 border-t border-base-300 relative">
+                        <div id="priceInfo2"
+                            class="absolute top-1 left-1 bg-white bg-opacity-20 backdrop-blur-sm text-black text-xs px-1 py-0.5 rounded z-10 font-mono border border-black border-opacity-20">
+                            <span>O:<span id="open2">-</span></span> |
+                            <span>H:<span id="high2">-</span></span> |
+                            <span>L:<span id="low2">-</span></span> |
+                            <span>C:<span id="close2">-</span></span> |
+                            <span>V:<span id="volume2">-</span></span>
+                        </div>
+                        <div id="indicatorInfoContainer2" class="absolute top-6 left-1 z-50"
+                            style="display: flex; flex-direction: column; gap: 1px;">
+                            <!-- Individual indicator info will be added here dynamically -->
+                        </div>
+                    </div>
+                    <div id="macdChart2"
+                        class="chart-macd chart-container mr-0  bg-base-100 border-t border-base-300 relative">
+                        <div id="macdInfo2"
+                            class="absolute top-1 left-1 bg-white bg-opacity-20 backdrop-blur-sm text-black text-xs px-1 py-0.5 rounded z-10 font-mono border border-black border-opacity-20">
+                            <span>MACD(12,26,9): <span id="macdValues2">- - -</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 3: 15 minutes -->
+                <div class="chart-column">
+                    <div class="interval-badge">
+                        <span class="text-accent font-semibold">15m</span>
+                    </div>
+                    <div id="chart3" class="chart-main chart-container bg-base-100 border-t border-base-300 relative">
+                        <div id="priceInfo3"
+                            class="absolute top-1 left-1 bg-white bg-opacity-20 backdrop-blur-sm text-black text-xs px-1 py-0.5 rounded z-10 font-mono border border-black border-opacity-20">
+                            <span>O:<span id="open3">-</span></span> |
+                            <span>H:<span id="high3">-</span></span> |
+                            <span>L:<span id="low3">-</span></span> |
+                            <span>C:<span id="close3">-</span></span> |
+                            <span>V:<span id="volume3">-</span></span>
+                        </div>
+                        <div id="indicatorInfoContainer3" class="absolute top-6 left-1 z-50"
+                            style="display: flex; flex-direction: column; gap: 1px;">
+                            <!-- Individual indicator info will be added here dynamically -->
+                        </div>
+                    </div>
+                    <div id="macdChart3"
+                        class="chart-macd chart-container mr-0  bg-base-100 border-t border-base-300 relative">
+                        <div id="macdInfo3"
+                            class="absolute top-1 left-1 bg-white bg-opacity-20 backdrop-blur-sm text-black text-xs px-1 py-0.5 rounded z-10 font-mono border border-black border-opacity-20">
+                            <span>MACD(12,26,9): <span id="macdValues3">- - -</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Range Slider (global) -->
+            <div id="rangeSliderContainer" class="px-3 pb-2 hidden">
+                <div class="flex items-center gap-2 mb-2">
+                    <input id="rangeSliderInput" type="range" min="10" max="100" value="100"
+                        class="range range-xs flex-1" />
+                    <div class="text-xs opacity-60 min-w-[40px] text-center">
+                        <span id="zoomLevel">100%</span>
+                    </div>
+                </div>
+                <div class="flex justify-between text-[10px] opacity-60 mb-2">
+                    <span>Zoom out</span>
+                    <span>Zoom in</span>
+                </div>
+                <div class="flex gap-1">
+                    <button id="fitLast20" class="btn btn-xs btn-outline flex-1">
+                        <span class="text-xs">20</span>
+                    </button>
+                    <button id="fitLast50" class="btn btn-xs btn-outline flex-1">
+                        <span class="text-xs">50</span>
+                    </button>
+                    <button id="fitLast100" class="btn btn-xs btn-outline flex-1">
+                        <span class="text-xs">100</span>
+                    </button>
+                    <button id="fitAll" class="btn btn-xs btn-primary flex-1">
+                        <span class="text-xs">All</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar content -->
+    <div class="drawer-side z-40">
+        <label for="drawer-toggle" aria-label="close sidebar" class="drawer-overlay"></label>
+        <div id="watchlist" class="menu p-0 w-72 min-h-full bg-base-100 text-base-content flex flex-col">
+            <div class="p-4 border-b border-base-300">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-bold">Watchlist</h3>
+                    <a href="/dashboard" class="btn btn-sm btn-primary gap-2">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Add symbol form will be inserted here by JavaScript -->
+            <div id="watchlistItems" class="flex flex-col gap-2 p-4 overflow-y-auto max-h-[calc(100vh-10rem)]">
+            </div>
+
+            <!-- Bottom Dashboard Button -->
+            <div class="p-4 border-t border-base-300 mt-auto">
+                <a href="/dashboard" class="btn btn-primary w-full gap-2">
+                    <i class="fas fa-home"></i>
+                    <span>Quay về Dashboard</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Cache Stats Modal -->
+    <div id="cacheStatsModal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">🧠 Smart Cache Statistics</h3>
+            <div id="cacheStatsContent" class="space-y-2">
+                <!-- Cache stats will be populated here -->
+            </div>
+            <div class="modal-action">
+                <button id="clearCache" class="btn btn-error btn-sm">Clear Cache</button>
+                <button id="warmUpCache" class="btn btn-info btn-sm">Warm Up</button>
+                <button class="btn btn-primary btn-sm"
+                    onclick="document.getElementById('cacheStatsModal').close()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <!-- Refactored Object-Oriented JavaScript -->
+    <script src="{{ url_for('static', filename='js/technical_analysis.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/smart_cache_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/optimized_data_fetcher.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/data_fetcher.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui_controller.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/watchlist_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/settings_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/settings_ui_controller.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/indicators_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/websocket_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/chart_manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main_refactored.js') }}"></script>
+
+    <script>
+        // Load symbols from database and populate dropdown
+        async function loadSymbolsDropdown() {
+            try {
+                const response = await fetch('/api/v1/symbols?per_page=1000');
+                const data = await response.json();
+
+                if (data.success && data.data.items) {
+                    const tickerSelect = document.getElementById('ticker');
+                    const currentValue = tickerSelect.value;
+
+                    // Clear existing options
+                    tickerSelect.innerHTML = '';
+
+                    // Add symbols from database - sort by active status first, then by ticker
+                    const sortedSymbols = data.data.items.sort((a, b) => {
+                        // Active symbols first
+                        if (a.active && !b.active) return -1;
+                        if (!a.active && b.active) return 1;
+                        // Then sort by ticker alphabetically
+                        return a.ticker.localeCompare(b.ticker);
+                    });
+
+                    sortedSymbols.forEach(symbol => {
+                        const option = document.createElement('option');
+                        option.value = symbol.ticker;
+                        // Show active/inactive status and exchange info
+                        const status = symbol.active ? '✓' : '✗';
+                        option.textContent = `${symbol.ticker} (${symbol.exchange}) ${status}`;
+                        option.disabled = !symbol.active; // Disable inactive symbols
+                        if (symbol.ticker === currentValue) {
+                            option.selected = true;
+                        }
+                        tickerSelect.appendChild(option);
+                    });
+
+                    console.log(`Loaded ${data.data.items.length} total symbols (${data.data.items.filter(s => s.active).length} active, ${data.data.items.filter(s => !s.active).length} inactive)`);
+                }
+            } catch (error) {
+                console.error('Error loading symbols:', error);
+            }
+        }
+
+        // Load symbols when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            loadSymbolsDropdown();
+            setupCacheHandlers();
+        });
+
+        // Setup cache event handlers
+        function setupCacheHandlers() {
+            // Cache stats button
+            document.getElementById('cacheStats').addEventListener('click', function () {
+                showCacheStats();
+            });
+
+            // Clear cache button
+            document.getElementById('clearCache').addEventListener('click', function () {
+                if (window.smartCache) {
+                    window.smartCache.clear();
+                    showCacheStats();
+                    console.log('🗑️ Cache cleared');
+                }
+            });
+
+            // Warm up cache button
+            document.getElementById('warmUpCache').addEventListener('click', function () {
+                if (window.optimizedDataFetcher) {
+                    window.optimizedDataFetcher.warmUpCache();
+                    console.log('🔥 Cache warm-up started');
+                }
+            });
+
+        }
+
+        // Show cache statistics
+        function showCacheStats() {
+            if (!window.smartCache) return;
+
+            const stats = window.smartCache.getStats();
+            const content = document.getElementById('cacheStatsContent');
+
+            content.innerHTML = `
+                <div class="stats grid grid-cols-2 gap-4">
+                    <div class="stat">
+                        <div class="stat-title">Hit Rate</div>
+                        <div class="stat-value text-success">${stats.hitRate}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Cache Hits</div>
+                        <div class="stat-value">${stats.hits}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Cache Misses</div>
+                        <div class="stat-value">${stats.misses}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Evictions</div>
+                        <div class="stat-value">${stats.evictions}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Memory Usage</div>
+                        <div class="stat-value">${stats.memoryUsage}</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-title">Cache Entries</div>
+                        <div class="stat-value">${stats.entries}</div>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <div class="text-sm text-gray-600">
+                    <p><strong>Memory Limit:</strong> ${stats.memoryLimit}</p>
+                    <p><strong>Cache Levels:</strong> Memory → LocalStorage → IndexedDB</p>
+                    <p><strong>TTL:</strong> Candles (5min), MACD (10min), Symbols (30min)</p>
+                </div>
+            `;
+
+            document.getElementById('cacheStatsModal').showModal();
+        }
+    </script>
+
+</body>
+
+</html>

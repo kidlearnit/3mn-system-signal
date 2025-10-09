@@ -1,0 +1,641 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+
+<!-- Header -->
+<header class="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-3">
+            <div class="flex items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-yellow-500 rounded flex items-center justify-center">
+                        <span class="text-sm font-bold text-gray-900">B</span>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold text-white">
+                            Strategy Dashboard
+                        </h1>
+                        <p class="text-xs text-gray-400">Trading Strategy Management</p>
+                    </div>
+                </div>
+                <div class="ml-6 flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"
+                            id="usMarketIndicator"></span>
+                        <span class="text-xs text-gray-300">US</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-2 h-2 bg-red-500 rounded-full mr-1" id="vnMarketIndicator"></span>
+                        <span class="text-xs text-gray-300">VN</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">
+                    <span id="currentTime"></span>
+                </div>
+                <button onclick="refreshDashboard()"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Active Strategies</p>
+                    <p class="text-xl font-semibold text-white" id="activeStrategies">0</p>
+                    <p class="text-xs text-green-400 mt-1">+12%</p>
+                </div>
+                <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                    <span class="text-sm">🎯</span>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Total Signals</p>
+                    <p class="text-xl font-semibold text-white" id="totalSignals">0</p>
+                    <p class="text-xs text-blue-400 mt-1">Live</p>
+                </div>
+                <div class="w-8 h-8 bg-purple-600 rounded flex items-center justify-center">
+                    <span class="text-sm">📊</span>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Buy Signals</p>
+                    <p class="text-xl font-semibold text-green-400" id="buySignals">0</p>
+                    <p class="text-xs text-green-400 mt-1">Bullish</p>
+                </div>
+                <div class="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+                    <span class="text-sm">📈</span>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Sell Signals</p>
+                    <p class="text-xl font-semibold text-red-400" id="sellSignals">0</p>
+                    <p class="text-xs text-red-400 mt-1">Bearish</p>
+                </div>
+                <div class="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+                    <span class="text-sm">📉</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategy Management Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Active Strategies -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-sm font-semibold text-white">Active Strategies</h2>
+                    <p class="text-xs text-gray-400">Manage your trading strategies</p>
+                </div>
+                <button onclick="showAddStrategyModal()"
+                    class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                    + Add
+                </button>
+            </div>
+            <div id="activeStrategiesList" class="space-y-2">
+                <!-- Strategy items will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Recent Signals -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-sm font-semibold text-white">Recent Signals</h2>
+                    <p class="text-xs text-gray-400">Latest trading signals</p>
+                </div>
+                <button onclick="clearSignals()"
+                    class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                    Clear
+                </button>
+            </div>
+            <div id="recentSignals" class="space-y-2 max-h-80 overflow-y-auto">
+                <!-- Signals will be loaded here -->
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Add Strategy Modal -->
+<div id="addStrategyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-sm font-semibold text-white">Add New Strategy</h3>
+                    <p class="text-xs text-gray-400">Configure your trading strategy</p>
+                </div>
+                <button onclick="hideAddStrategyModal()" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="addStrategyForm">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Symbol</label>
+                        <div class="relative">
+                            <input type="text" id="strategySymbol"
+                                class="bg-gray-700 border border-gray-600 text-white text-xs rounded px-3 py-2 w-full focus:border-yellow-500 focus:outline-none"
+                                placeholder="e.g., TQQQ, AAPL, MSFT" required autocomplete="off"
+                                list="symbolSuggestions">
+                            <datalist id="symbolSuggestions">
+                                <option value="TQQQ">
+                                <option value="AAPL">
+                                <option value="MSFT">
+                                <option value="GOOGL">
+                                <option value="TSLA">
+                                <option value="NVDA">
+                                <option value="AMZN">
+                                <option value="META">
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Market</label>
+                        <select id="strategyMarket"
+                            class="bg-gray-700 border border-gray-600 text-white text-xs rounded px-3 py-2 w-full focus:border-yellow-500 focus:outline-none"
+                            required>
+                            <option value="us">US Market</option>
+                            <option value="vn">VN Market</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Strategy Type</label>
+                        <select id="strategyType"
+                            class="bg-gray-700 border border-gray-600 text-white text-xs rounded px-3 py-2 w-full focus:border-yellow-500 focus:outline-none"
+                            required>
+                            <option value="1">7-Timeframe Strategy</option>
+                            <option value="2">MACD Strategy</option>
+                            <option value="3">Custom Strategy</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Notifications</label>
+                        <div class="space-y-2">
+                            <label
+                                class="flex items-center p-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors cursor-pointer">
+                                <input type="checkbox" id="telegramNotify" class="mr-2 w-3 h-3 text-yellow-500">
+                                <span class="text-xs text-gray-300">Telegram</span>
+                            </label>
+                            <label
+                                class="flex items-center p-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors cursor-pointer">
+                                <input type="checkbox" id="viberNotify" class="mr-2 w-3 h-3 text-yellow-500">
+                                <span class="text-xs text-gray-300">Viber</span>
+                            </label>
+                            <label
+                                class="flex items-center p-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors cursor-pointer">
+                                <input type="checkbox" id="pushNotify" class="mr-2 w-3 h-3 text-yellow-500">
+                                <span class="text-xs text-gray-300">Push Notification</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 mt-4">
+                    <button type="button" onclick="hideAddStrategyModal()"
+                        class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="addStrategyBtn"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-medium px-3 py-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span id="addStrategyBtnText">Add Strategy</span>
+                        <span id="addStrategyBtnLoading" class="hidden">Adding...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<script>
+    // Global variables
+    let strategies = [];
+    let signals = [];
+    // let socket = null;
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        loadDashboard();
+        //initializeSocket();
+
+        // Add strategy form submission
+        document.getElementById('addStrategyForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Show loading state
+            const btn = document.getElementById('addStrategyBtn');
+            const btnText = document.getElementById('addStrategyBtnText');
+            const btnLoading = document.getElementById('addStrategyBtnLoading');
+
+            btn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+
+            const formData = {
+                symbol: document.getElementById('strategySymbol').value,
+                market: document.getElementById('strategyMarket').value,
+                strategy_type: document.getElementById('strategyType').value,
+                notifications: {
+                    telegram: document.getElementById('telegramNotify').checked,
+                    viber: document.getElementById('viberNotify').checked,
+                    push: document.getElementById('pushNotify').checked
+                }
+            };
+
+            try {
+                const response = await fetch('/api/strategies/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Strategy added successfully', 'success');
+                    hideAddStrategyModal();
+                    loadDashboard();
+                    document.getElementById('addStrategyForm').reset();
+                } else {
+                    showNotification(`Failed to add strategy: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding strategy:', error);
+                showNotification('Error adding strategy', 'error');
+            } finally {
+                // Reset loading state
+                btn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        });
+    });
+
+    // Load dashboard data
+    async function loadDashboard() {
+        try {
+            const response = await fetch('/api/strategies/status');
+            const data = await response.json();
+
+            if (data.success) {
+                strategies = data.strategies || [];
+                signals = data.signals || [];
+                updateActiveStrategies();
+                updateRecentSignals();
+                updateStatistics();
+                console.log('✅ Dashboard loaded successfully:', { strategies: strategies.length, signals: signals.length });
+            } else {
+                console.error('❌ Dashboard API error:', data.message);
+                showNotification(`Dashboard error: ${data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('❌ Error loading dashboard:', error);
+            showNotification('Error loading dashboard data', 'error');
+        }
+    }
+
+    // Update active strategies list
+    function updateActiveStrategies(strategiesData = strategies) {
+        const container = document.getElementById('activeStrategiesList');
+        container.innerHTML = '';
+
+        if (strategiesData.length === 0) {
+            container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">📊</span>
+                        </div>
+                        <p class="text-gray-400 text-sm">No strategies found</p>
+                        <p class="text-gray-500 text-xs mt-1">Add your first strategy to get started</p>
+                        <button onclick="showAddStrategyModal()" 
+                            class="mt-3 bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-4 py-2 rounded transition-colors">
+                            + Add Strategy
+                        </button>
+                    </div>
+                `;
+            return;
+        }
+
+        strategiesData.forEach(strategy => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-700 border border-gray-600 rounded p-3 hover:border-gray-500 transition-colors';
+
+            const statusClass = strategy.status === 'running' ? 'bg-green-600 text-white' :
+                strategy.status === 'stopped' ? 'bg-red-600 text-white' : 'bg-yellow-600 text-gray-900';
+
+            div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-600 rounded flex items-center justify-center">
+                                <span class="text-sm font-bold text-white">${strategy.symbol.charAt(0)}</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-semibold text-white text-sm">${strategy.symbol}</span>
+                                    <span class="text-xs px-2 py-0.5 rounded ${statusClass}">${strategy.status}</span>
+                                </div>
+                                <p class="text-xs text-gray-400">${strategy.market.toUpperCase()} • ${strategy.strategy_type}</p>
+                                <p class="text-xs text-gray-500">Signals: ${strategy.signals_count || 0}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col space-y-1">
+                            <button onclick="toggleStrategy('${strategy.id}')" 
+                                class="${strategy.status === 'running' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                                ${strategy.status === 'running' ? '⏹️ Stop' : '▶️ Start'}
+                            </button>
+                            <div class="flex space-x-1">
+                                <button onclick="configureStrategy('${strategy.id}')" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-2 py-1 rounded transition-colors">
+                                    ⚙️
+                                </button>
+                                <button onclick="removeStrategy('${strategy.id}')" 
+                                    class="bg-gray-600 hover:bg-gray-500 text-gray-300 text-xs font-medium px-2 py-1 rounded transition-colors">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+            container.appendChild(div);
+        });
+    }
+
+    // Update recent signals
+    function updateRecentSignals(signalsData = signals) {
+        const container = document.getElementById('recentSignals');
+        container.innerHTML = '';
+
+        if (signalsData.length === 0) {
+            container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-lg">📡</span>
+                        </div>
+                        <p class="text-gray-400 text-sm">No signals yet</p>
+                        <p class="text-gray-500 text-xs mt-1">Signals will appear here when strategies are active</p>
+                    </div>
+                `;
+            return;
+        }
+
+        signalsData.slice(0, 10).forEach(signal => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-700 border border-gray-600 rounded p-3 hover:border-gray-500 transition-colors';
+
+            const signalClass = signal.signal_type === 'BUY' ? 'text-green-400' :
+                signal.signal_type === 'SELL' ? 'text-red-400' : 'text-gray-400';
+
+            const signalIcon = signal.signal_type === 'BUY' ? '📈' :
+                signal.signal_type === 'SELL' ? '📉' : '⏸️';
+
+            const signalBg = signal.signal_type === 'BUY' ? 'bg-green-600' :
+                signal.signal_type === 'SELL' ? 'bg-red-600' : 'bg-gray-600';
+
+            div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 ${signalBg} rounded flex items-center justify-center">
+                                <span class="text-sm">${signalIcon}</span>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-semibold text-white text-sm">${signal.symbol}</span>
+                                    <span class="text-xs ${signalClass} font-medium px-2 py-0.5 rounded ${signal.signal_type === 'BUY' ? 'bg-green-600 bg-opacity-20' : signal.signal_type === 'SELL' ? 'bg-red-600 bg-opacity-20' : 'bg-gray-600 bg-opacity-20'}">${signal.signal_type}</span>
+                                </div>
+                                <p class="text-xs text-gray-400">${signal.timeframe} • ${signal.zone} • ${new Date(signal.timestamp).toLocaleTimeString()}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-semibold ${signalClass}">${(signal.strength * 100).toFixed(0)}%</div>
+                            <div class="text-xs text-gray-500">Strength</div>
+                        </div>
+                    </div>
+                `;
+
+            container.appendChild(div);
+        });
+    }
+
+    // Update statistics
+    function updateStatistics(statisticsData = null) {
+        if (statisticsData) {
+            document.getElementById('activeStrategies').textContent = statisticsData.active_strategies || 0;
+            document.getElementById('totalSignals').textContent = statisticsData.total_signals || 0;
+            document.getElementById('buySignals').textContent = statisticsData.buy_signals || 0;
+            document.getElementById('sellSignals').textContent = statisticsData.sell_signals || 0;
+            return;
+        }
+
+        const activeCount = strategies.filter(s => s.status === 'running').length;
+        const totalSignals = signals.length;
+        const buySignals = signals.filter(s => s.signal_type === 'BUY').length;
+        const sellSignals = signals.filter(s => s.signal_type === 'SELL').length;
+
+        document.getElementById('activeStrategies').textContent = activeCount;
+        document.getElementById('totalSignals').textContent = totalSignals;
+        document.getElementById('buySignals').textContent = buySignals;
+        document.getElementById('sellSignals').textContent = sellSignals;
+    }
+
+    // Override common functions for strategy_dashboard.html
+    function showAddStrategyModal() {
+        document.getElementById('addStrategyModal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function hideAddStrategyModal() {
+        document.getElementById('addStrategyModal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    function refreshDashboard() {
+        loadDashboard();
+        showNotification('Dashboard refreshed', 'info');
+    }
+
+    async function loadDashboard() {
+        try {
+            const response = await fetch('/api/strategies/dashboard');
+            const result = await response.json();
+
+            if (result.success) {
+                updateActiveStrategies(result.data.strategies);
+                updateRecentSignals(result.data.signals);
+                updateStatistics(result.data.statistics);
+            } else {
+                showNotification(`Dashboard error: ${result.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            showNotification('Error loading dashboard data', 'error');
+        }
+    }
+
+    function clearSignals() {
+        if (confirm('Are you sure you want to clear all signals?')) {
+            // Implement clear signals API call
+            showNotification('Signals cleared', 'info');
+        }
+    }
+
+    function toggleStrategy(strategyId) {
+        const strategy = strategies.find(s => s.id === strategyId);
+        if (!strategy) return;
+
+        const action = strategy.status === 'running' ? 'stop' : 'start';
+        const endpoint = action === 'start' ? '/api/strategies/start' : '/api/strategies/stop';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ strategy_id: strategyId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Strategy ${action}ed successfully`, 'success');
+                    loadDashboard();
+                } else {
+                    showNotification(`Failed to ${action} strategy: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`Error ${action}ing strategy:`, error);
+                showNotification(`Error ${action}ing strategy`, 'error');
+            });
+    }
+
+    function removeStrategy(strategyId) {
+        if (!confirm('Are you sure you want to remove this strategy?')) {
+            return;
+        }
+
+        fetch('/api/strategies/remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ strategy_id: strategyId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Strategy removed successfully', 'success');
+                    loadDashboard();
+                } else {
+                    showNotification(`Failed to remove strategy: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error removing strategy:', error);
+                showNotification('Error removing strategy', 'error');
+            });
+    }
+
+    function configureStrategy(strategyId) {
+        // Navigate to strategy configuration page
+        window.location.href = `/strategy-config?strategy_id=${strategyId}`;
+    }
+
+    function toggleMonitoring() {
+        // Toggle monitoring status
+        const isMonitoring = document.getElementById('monitoringStatus')?.textContent === 'Active';
+        const action = isMonitoring ? 'stop' : 'start';
+
+        fetch(`/api/monitoring/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Monitoring ${action}ed successfully`, 'success');
+                    loadDashboard();
+                } else {
+                    showNotification(`Failed to ${action} monitoring: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`Error ${action}ing monitoring:`, error);
+                showNotification(`Error ${action}ing monitoring`, 'error');
+            });
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+        const container = document.getElementById('notificationContainer');
+        const notification = document.createElement('div');
+
+        const typeClasses = {
+            'success': 'bg-green-900 border-green-500 text-green-100',
+            'error': 'bg-red-900 border-red-500 text-red-100',
+            'warning': 'bg-yellow-900 border-yellow-500 text-yellow-100',
+            'info': 'bg-blue-900 border-blue-500 text-blue-100'
+        };
+
+        notification.className = `${typeClasses[type]} border p-3 mb-2 rounded text-xs font-medium transition-all duration-300 transform translate-x-full opacity-0`;
+        notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-gray-400 hover:text-white">
+                        ×
+                    </button>
+                </div>
+            `;
+
+        container.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full', 'opacity-0');
+            notification.classList.add('translate-x-0', 'opacity-100');
+        }, 100);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }, 5000);
+    }
+</script>
+{% endblock %}

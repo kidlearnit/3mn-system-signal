@@ -1,0 +1,984 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Strategy Detail - Trading Signals{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-cogs text-primary"></i>
+        Strategy Configuration
+        <span class="badge bg-success ms-2" id="strategyStatus">Active</span>
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2" role="group">
+            <button type="button" class="btn btn-success" onclick="saveStrategy()">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <button type="button" class="btn btn-warning" onclick="testStrategy()">
+                <i class="fas fa-play"></i> Test Strategy
+            </button>
+            <button type="button" class="btn btn-info" onclick="backtestStrategy()">
+                <i class="fas fa-chart-line"></i> Backtest
+            </button>
+        </div>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-cog"></i> Actions
+            </button>
+            <ul class="dropdown-menu">
+                <li><button class="dropdown-item" type="button" onclick="duplicateStrategy()">Duplicate
+                        Strategy</button></li>
+                <li><button class="dropdown-item" type="button" onclick="exportStrategy()">Export Configuration</button>
+                </li>
+                <li><button class="dropdown-item" type="button" onclick="importStrategy()">Import Configuration</button>
+                </li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li><button class="dropdown-item text-danger" type="button" onclick="deleteStrategy()">Delete
+                        Strategy</button></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Overview -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-info-circle"></i> Strategy Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="strategyName">Strategy Name</label>
+                            <input type="text" class="form-control" id="strategyName" value="MACD Momentum Strategy">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="strategyDescription">Description</label>
+                            <textarea class="form-control" id="strategyDescription"
+                                rows="3">Advanced MACD-based momentum strategy with multiple timeframe analysis</textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="strategySymbol">Target Symbol</label>
+                            <select class="form-select" id="strategySymbol">
+                                <option value="AAPL" selected>AAPL - Apple Inc.</option>
+                                <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+                                <option value="MSFT">MSFT - Microsoft Corporation</option>
+                                <option value="TSLA">TSLA - Tesla Inc.</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="strategyRisk">Risk Level</label>
+                            <select class="form-select" id="strategyRisk">
+                                <option value="low">Low Risk</option>
+                                <option value="medium" selected>Medium Risk</option>
+                                <option value="high">High Risk</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar"></i> Performance Metrics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="metric-value text-success">+12.5%</div>
+                        <div class="metric-label">Total Return</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="metric-value text-info">85%</div>
+                        <div class="metric-label">Win Rate</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="metric-value text-warning">1.45</div>
+                        <div class="metric-label">Sharpe Ratio</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="metric-value text-primary">24</div>
+                        <div class="metric-label">Total Signals</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Tabs -->
+<div class="card shadow">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="strategyTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="indicators-tab" data-bs-toggle="tab" data-bs-target="#indicators"
+                    type="button" role="tab">
+                    <i class="fas fa-chart-line"></i> Technical Indicators
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="thresholds-tab" data-bs-toggle="tab" data-bs-target="#thresholds"
+                    type="button" role="tab">
+                    <i class="fas fa-sliders-h"></i> Thresholds & Zones
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="timeframes-tab" data-bs-toggle="tab" data-bs-target="#timeframes"
+                    type="button" role="tab">
+                    <i class="fas fa-clock"></i> Timeframes
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="signals-tab" data-bs-toggle="tab" data-bs-target="#signals" type="button"
+                    role="tab">
+                    <i class="fas fa-signal"></i> Signal Rules
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring"
+                    type="button" role="tab">
+                    <i class="fas fa-eye"></i> Live Monitoring
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="strategyTabContent">
+            <!-- Technical Indicators Configuration -->
+            <div class="tab-pane fade show active" id="indicators" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">MACD Configuration</h6>
+                        <div class="form-group mb-3">
+                            <label for="macdFastPeriod">Fast EMA Period</label>
+                            <input type="number" class="form-control" id="macdFastPeriod" value="12" min="1" max="50">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="macdSlowPeriod">Slow EMA Period</label>
+                            <input type="number" class="form-control" id="macdSlowPeriod" value="26" min="1" max="100">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="macdSignalPeriod">Signal Line Period</label>
+                            <input type="number" class="form-control" id="macdSignalPeriod" value="9" min="1" max="50">
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="macdEnabled" checked>
+                                <label class="form-check-label" for="macdEnabled">
+                                    Enable MACD
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">RSI Configuration</h6>
+                        <div class="form-group mb-3">
+                            <label for="rsiPeriod">RSI Period</label>
+                            <input type="number" class="form-control" id="rsiPeriod" value="14" min="1" max="50">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="rsiOverbought">Overbought Level</label>
+                            <input type="number" class="form-control" id="rsiOverbought" value="70" min="50" max="100">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="rsiOversold">Oversold Level</label>
+                            <input type="number" class="form-control" id="rsiOversold" value="30" min="0" max="50">
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="rsiEnabled" checked>
+                                <label class="form-check-label" for="rsiEnabled">
+                                    Enable RSI
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Bollinger Bands Configuration</h6>
+                        <div class="form-group mb-3">
+                            <label for="bbPeriod">Period</label>
+                            <input type="number" class="form-control" id="bbPeriod" value="20" min="1" max="50">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="bbStdDev">Standard Deviation</label>
+                            <input type="number" class="form-control" id="bbStdDev" value="2" min="1" max="5"
+                                step="0.1">
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="bbEnabled">
+                                <label class="form-check-label" for="bbEnabled">
+                                    Enable Bollinger Bands
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Moving Averages Configuration</h6>
+                        <div class="form-group mb-3">
+                            <label for="smaPeriod">SMA Period</label>
+                            <input type="number" class="form-control" id="smaPeriod" value="50" min="1" max="200">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="emaPeriod">EMA Period</label>
+                            <input type="number" class="form-control" id="emaPeriod" value="21" min="1" max="100">
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="maEnabled" checked>
+                                <label class="form-check-label" for="maEnabled">
+                                    Enable Moving Averages
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thresholds & Zones Configuration -->
+            <div class="tab-pane fade" id="thresholds" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-primary mb-0">Threshold Configuration by Timeframe</h6>
+                            <button type="button" class="btn btn-sm btn-success" onclick="addThreshold()">
+                                <i class="fas fa-plus"></i> Add Threshold
+                            </button>
+                        </div>
+
+                        <!-- Thresholds Table -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="thresholdsTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Timeframe</th>
+                                        <th>Indicator</th>
+                                        <th>Zone</th>
+                                        <th>Comparison</th>
+                                        <th>Min Value</th>
+                                        <th>Max Value</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value="1m">1 Minute</option>
+                                                <option value="5m" selected>5 Minutes</option>
+                                                <option value="15m">15 Minutes</option>
+                                                <option value="1h">1 Hour</option>
+                                                <option value="1D">1 Day</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value="MACD" selected>MACD</option>
+                                                <option value="RSI">RSI</option>
+                                                <option value="BB">Bollinger Bands</option>
+                                                <option value="SMA">SMA</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value="Bull" selected>Bull Zone</option>
+                                                <option value="Bear">Bear Zone</option>
+                                                <option value="Neutral">Neutral Zone</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value=">=" selected>>=</option>
+                                                <option value=">">></option>
+                                                <option value="<=">
+                                                    <=< /option>
+                                                <option value="<">
+                                                    << /option>
+                                                <option value="between">Between</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="number" class="form-control form-control-sm" value="0.5"
+                                                step="0.1"></td>
+                                        <td><input type="number" class="form-control form-control-sm" value="2.0"
+                                                step="0.1"></td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="editThreshold(this)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="deleteThreshold(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value="1m">1 Minute</option>
+                                                <option value="5m">5 Minutes</option>
+                                                <option value="15m" selected>15 Minutes</option>
+                                                <option value="1h">1 Hour</option>
+                                                <option value="1D">1 Day</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value="MACD">MACD</option>
+                                                <option value="RSI" selected>RSI</option>
+                                                <option value="BB">Bollinger Bands</option>
+                                                <option value="SMA">SMA</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value="Bull">Bull Zone</option>
+                                                <option value="Bear" selected>Bear Zone</option>
+                                                <option value="Neutral">Neutral Zone</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm">
+                                                <option value=">=">>=</option>
+                                                <option value=">">></option>
+                                                <option value="<=" selected>
+                                                    <=< /option>
+                                                <option value="<">
+                                                    << /option>
+                                                <option value="between">Between</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="number" class="form-control form-control-sm" value="30"
+                                                step="1"></td>
+                                        <td><input type="number" class="form-control form-control-sm" value="70"
+                                                step="1"></td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="editThreshold(this)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="deleteThreshold(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeframes Configuration -->
+            <div class="tab-pane fade" id="timeframes" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Active Timeframes</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="tf1m">
+                            <label class="form-check-label" for="tf1m">
+                                1 Minute
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="tf5m" checked>
+                            <label class="form-check-label" for="tf5m">
+                                5 Minutes
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="tf15m" checked>
+                            <label class="form-check-label" for="tf15m">
+                                15 Minutes
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="tf1h" checked>
+                            <label class="form-check-label" for="tf1h">
+                                1 Hour
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="tf1d">
+                            <label class="form-check-label" for="tf1d">
+                                1 Day
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Timeframe Weights</h6>
+                        <div class="form-group mb-3">
+                            <label for="weight1m">1 Minute Weight</label>
+                            <input type="range" class="form-range" id="weight1m" min="0" max="100" value="10">
+                            <div class="d-flex justify-content-between">
+                                <small>0%</small>
+                                <small id="weight1mValue">10%</small>
+                                <small>100%</small>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="weight5m">5 Minutes Weight</label>
+                            <input type="range" class="form-range" id="weight5m" min="0" max="100" value="30">
+                            <div class="d-flex justify-content-between">
+                                <small>0%</small>
+                                <small id="weight5mValue">30%</small>
+                                <small>100%</small>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="weight15m">15 Minutes Weight</label>
+                            <input type="range" class="form-range" id="weight15m" min="0" max="100" value="40">
+                            <div class="d-flex justify-content-between">
+                                <small>0%</small>
+                                <small id="weight15mValue">40%</small>
+                                <small>100%</small>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="weight1h">1 Hour Weight</label>
+                            <input type="range" class="form-range" id="weight1h" min="0" max="100" value="20">
+                            <div class="d-flex justify-content-between">
+                                <small>0%</small>
+                                <small id="weight1hValue">20%</small>
+                                <small>100%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signal Rules Configuration -->
+            <div class="tab-pane fade" id="signals" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Buy Signal Rules</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label>MACD Bull Signal</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="buyMacdBull" checked>
+                                        <label class="form-check-label" for="buyMacdBull">
+                                            MACD > Signal Line AND MACD > 0
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>RSI Oversold</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="buyRsiOversold" checked>
+                                        <label class="form-check-label" for="buyRsiOversold">
+                                            RSI < 30 (Oversold) </label>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Price Above SMA</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="buyPriceAboveSma" checked>
+                                        <label class="form-check-label" for="buyPriceAboveSma">
+                                            Current Price > SMA(50)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3">Sell Signal Rules</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label>MACD Bear Signal</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sellMacdBear" checked>
+                                        <label class="form-check-label" for="sellMacdBear">
+                                            MACD < Signal Line AND MACD < 0 </label>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>RSI Overbought</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sellRsiOverbought" checked>
+                                        <label class="form-check-label" for="sellRsiOverbought">
+                                            RSI > 70 (Overbought)
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Price Below SMA</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sellPriceBelowSma" checked>
+                                        <label class="form-check-label" for="sellPriceBelowSma">
+                                            Current Price < SMA(50) </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6 class="text-primary mb-3">Signal Combination Logic</h6>
+                        <div class="form-group mb-3">
+                            <label for="signalLogic">Signal Combination Method</label>
+                            <select class="form-select" id="signalLogic">
+                                <option value="AND" selected>AND (All conditions must be true)</option>
+                                <option value="OR">OR (Any condition can be true)</option>
+                                <option value="MAJORITY">MAJORITY (More than 50% conditions must be true)</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="minConfidence">Minimum Confidence Level (%)</label>
+                            <input type="number" class="form-control" id="minConfidence" value="75" min="50" max="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Monitoring -->
+            <div class="tab-pane fade" id="monitoring" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="text-primary mb-3">Real-time Indicator Values</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="indicatorValuesTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Timeframe</th>
+                                        <th>MACD</th>
+                                        <th>MACD Signal</th>
+                                        <th>MACD Hist</th>
+                                        <th>RSI</th>
+                                        <th>SMA(50)</th>
+                                        <th>Current Price</th>
+                                        <th>Signal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>5m</td>
+                                        <td class="text-success">0.45</td>
+                                        <td class="text-warning">0.32</td>
+                                        <td class="text-info">0.13</td>
+                                        <td class="text-danger">75.2</td>
+                                        <td>150.25</td>
+                                        <td class="fw-bold">152.80</td>
+                                        <td><span class="badge bg-warning">Hold</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>15m</td>
+                                        <td class="text-success">0.78</td>
+                                        <td class="text-success">0.65</td>
+                                        <td class="text-success">0.13</td>
+                                        <td class="text-warning">58.4</td>
+                                        <td>149.80</td>
+                                        <td class="fw-bold">152.80</td>
+                                        <td><span class="badge bg-success">Buy</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>1h</td>
+                                        <td class="text-success">1.25</td>
+                                        <td class="text-success">1.10</td>
+                                        <td class="text-success">0.15</td>
+                                        <td class="text-success">45.2</td>
+                                        <td>148.50</td>
+                                        <td class="fw-bold">152.80</td>
+                                        <td><span class="badge bg-success">Strong Buy</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-primary mb-3">Live Adjustments</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="form-group mb-3">
+                                    <label for="liveMacdFast">MACD Fast Period</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="liveMacdFast" value="12" min="1"
+                                            max="50">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="updateLiveParameter('macd_fast', this.value)">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="liveMacdSlow">MACD Slow Period</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="liveMacdSlow" value="26" min="1"
+                                            max="100">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="updateLiveParameter('macd_slow', this.value)">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="liveRsiPeriod">RSI Period</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="liveRsiPeriod" value="14" min="1"
+                                            max="50">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="updateLiveParameter('rsi_period', this.value)">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="liveRsiOverbought">RSI Overbought</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="liveRsiOverbought" value="70"
+                                            min="50" max="100">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="updateLiveParameter('rsi_overbought', this.value)">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button class="btn btn-success w-100" onclick="applyLiveChanges()">
+                                <i class="fas fa-play"></i> Apply Live Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .metric-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
+        background-color: transparent;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-bottom-color: var(--accent-color);
+        color: var(--accent-color);
+    }
+
+    .form-range {
+        background: linear-gradient(to right, var(--accent-color) 0%, var(--accent-color) 50%, #e9ecef 50%, #e9ecef 100%);
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .table th {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        font-weight: 600;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .form-control-sm,
+    .form-select-sm {
+        font-size: 0.875rem;
+    }
+
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        setupRangeSliders();
+        loadStrategyData();
+        startLiveMonitoring();
+    });
+
+    // Setup range sliders
+    function setupRangeSliders() {
+        const sliders = ['weight1m', 'weight5m', 'weight15m', 'weight1h'];
+        sliders.forEach(sliderId => {
+            const slider = document.getElementById(sliderId);
+            const valueDisplay = document.getElementById(sliderId + 'Value');
+
+            slider.addEventListener('input', function () {
+                valueDisplay.textContent = this.value + '%';
+            });
+        });
+    }
+
+    // Load strategy data
+    async function loadStrategyData() {
+        try {
+            console.log('Loading strategy data...');
+
+            // Try to load real data from API
+            const response = await fetch('/api/strategies');
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Loaded real strategy data:', data);
+                updateIndicatorValuesWithRealData(data);
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error loading strategy data:', error);
+            console.log('Falling back to mock data');
+            updateIndicatorValues();
+        }
+    }
+
+    // Update indicator values with real data
+    function updateIndicatorValuesWithRealData(data) {
+        console.log('Updating indicator values with real data:', data);
+
+        // Update with real data from API
+        if (data && data.indicators) {
+            const indicators = data.indicators;
+
+            // Update MACD
+            if (indicators.macd) {
+                document.getElementById('macdLine').textContent = indicators.macd.line.toFixed(4);
+                document.getElementById('macdSignal').textContent = indicators.macd.signal.toFixed(4);
+                document.getElementById('macdHistogram').textContent = indicators.macd.histogram.toFixed(4);
+            }
+
+            // Update RSI
+            if (indicators.rsi) {
+                document.getElementById('rsiValue').textContent = indicators.rsi.toFixed(1);
+            }
+
+            // Update Bollinger Bands
+            if (indicators.bollinger) {
+                document.getElementById('bbUpper').textContent = indicators.bollinger.upper.toFixed(2);
+                document.getElementById('bbMiddle').textContent = indicators.bollinger.middle.toFixed(2);
+                document.getElementById('bbLower').textContent = indicators.bollinger.lower.toFixed(2);
+            }
+
+            // Update Moving Averages
+            if (indicators.sma) {
+                document.getElementById('smaValue').textContent = indicators.sma.toFixed(2);
+            }
+            if (indicators.ema) {
+                document.getElementById('emaValue').textContent = indicators.ema.toFixed(2);
+            }
+        }
+    }
+
+    // Update indicator values (mock fallback)
+    function updateIndicatorValues() {
+        // Mock real-time data updates
+        const rows = document.querySelectorAll('#indicatorValuesTable tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 7) {
+                // Update MACD values
+                cells[1].textContent = (Math.random() * 2 - 1).toFixed(2);
+                cells[2].textContent = (Math.random() * 2 - 1).toFixed(2);
+                cells[3].textContent = (Math.random() * 0.5 - 0.25).toFixed(2);
+
+                // Update RSI
+                cells[4].textContent = (Math.random() * 100).toFixed(1);
+
+                // Update SMA
+                cells[5].textContent = (150 + Math.random() * 10 - 5).toFixed(2);
+
+                // Update current price
+                cells[6].textContent = (152 + Math.random() * 5 - 2.5).toFixed(2);
+
+                // Update signal
+                const signals = ['Buy', 'Sell', 'Hold', 'Strong Buy', 'Strong Sell'];
+                const signal = signals[Math.floor(Math.random() * signals.length)];
+                const badgeClass = signal.includes('Buy') ? 'bg-success' :
+                    signal.includes('Sell') ? 'bg-danger' : 'bg-warning';
+                cells[7].innerHTML = `<span class="badge ${badgeClass}">${signal}</span>`;
+            }
+        });
+    }
+
+    // Start live monitoring
+    function startLiveMonitoring() {
+        // Update indicator values every 5 seconds
+        setInterval(updateIndicatorValues, 5000);
+    }
+
+    // Threshold management
+    function addThreshold() {
+        const table = document.getElementById('thresholdsTable');
+        const tbody = table.querySelector('tbody');
+        const newRow = tbody.insertRow();
+
+        newRow.innerHTML = `
+        <td>
+            <select class="form-select form-select-sm">
+                <option value="1m">1 Minute</option>
+                <option value="5m">5 Minutes</option>
+                <option value="15m">15 Minutes</option>
+                <option value="1h">1 Hour</option>
+                <option value="1D">1 Day</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm">
+                <option value="MACD">MACD</option>
+                <option value="RSI">RSI</option>
+                <option value="BB">Bollinger Bands</option>
+                <option value="SMA">SMA</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm">
+                <option value="Bull">Bull Zone</option>
+                <option value="Bear">Bear Zone</option>
+                <option value="Neutral">Neutral Zone</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm">
+                <option value=">=">>=</option>
+                <option value=">">></option>
+                <option value="<="><=</option>
+                <option value="<"><</option>
+                <option value="between">Between</option>
+            </select>
+        </td>
+        <td><input type="number" class="form-control form-control-sm" value="0" step="0.1"></td>
+        <td><input type="number" class="form-control form-control-sm" value="0" step="0.1"></td>
+        <td>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick="editThreshold(this)">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-outline-danger" onclick="deleteThreshold(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    `;
+    }
+
+    function editThreshold(button) {
+        const row = button.closest('tr');
+        // Enable editing mode
+        showToast('Editing threshold...', 'info');
+    }
+
+    function deleteThreshold(button) {
+        if (confirm('Are you sure you want to delete this threshold?')) {
+            const row = button.closest('tr');
+            row.remove();
+            showToast('Threshold deleted', 'success');
+        }
+    }
+
+    // Live parameter updates
+    function updateLiveParameter(parameter, value) {
+        showToast(`Updating ${parameter} to ${value}...`, 'info');
+        // Implement live parameter update
+    }
+
+    function applyLiveChanges() {
+        showToast('Applying live changes...', 'success');
+        // Implement live changes application
+    }
+
+    // Strategy actions
+    function saveStrategy() {
+        const strategyData = {
+            name: document.getElementById('strategyName').value,
+            description: document.getElementById('strategyDescription').value,
+            symbol: document.getElementById('strategySymbol').value,
+            risk: document.getElementById('strategyRisk').value,
+            // Add other form data
+        };
+
+        console.log('Saving strategy:', strategyData);
+        showToast('Strategy saved successfully', 'success');
+    }
+
+    function testStrategy() {
+        showToast('Testing strategy...', 'info');
+        // Implement strategy testing
+    }
+
+    function backtestStrategy() {
+        showToast('Running backtest...', 'info');
+        // Implement backtesting
+    }
+
+    function duplicateStrategy() {
+        showToast('Duplicating strategy...', 'info');
+        // Implement strategy duplication
+    }
+
+    function exportStrategy() {
+        showToast('Exporting strategy configuration...', 'info');
+        // Implement strategy export
+    }
+
+    function importStrategy() {
+        showToast('Importing strategy configuration...', 'info');
+        // Implement strategy import
+    }
+
+    function deleteStrategy() {
+        if (confirm('Are you sure you want to delete this strategy? This action cannot be undone.')) {
+            showToast('Strategy deleted', 'danger');
+            // Implement strategy deletion
+        }
+    }
+</script>
+{% endblock %}

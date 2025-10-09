@@ -1,0 +1,956 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Extensible Strategy System - Trading Signals{% endblock %}
+
+{% block page_title %}Extensible Strategy System{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-puzzle-piece text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Extensible Strategy System</h1>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button type="button" onclick="addNewStrategy()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            Add Strategy
+        </button>
+
+        <button type="button" onclick="testSystem()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-play mr-2"></i>
+            Test System
+        </button>
+
+        <button type="button" onclick="refreshData()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>
+            Refresh
+        </button>
+    </div>
+</div>
+
+<!-- System Status -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Strategies -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Strategies</p>
+                <p class="text-3xl font-bold text-gray-900" id="totalStrategies">-</p>
+            </div>
+            <div class="p-3 bg-blue-100 rounded-full">
+                <i class="fas fa-puzzle-piece text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium" id="activeStrategies">-</span>
+            <span class="text-sm text-gray-500 ml-2">active</span>
+        </div>
+    </div>
+
+    <!-- Aggregation Method -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Aggregation Method</p>
+                <p class="text-lg font-bold text-gray-900" id="aggregationMethod">-</p>
+            </div>
+            <div class="p-3 bg-green-100 rounded-full">
+                <i class="fas fa-cogs text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-blue-600 font-medium" id="minStrategies">-</span>
+            <span class="text-sm text-gray-500 ml-2">min strategies</span>
+        </div>
+    </div>
+
+    <!-- Last Signal -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Last Signal</p>
+                <p class="text-lg font-bold text-gray-900" id="lastSignal">-</p>
+            </div>
+            <div class="p-3 bg-purple-100 rounded-full">
+                <i class="fas fa-signal text-purple-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-gray-600 font-medium" id="lastSignalTime">-</span>
+        </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">System Health</p>
+                <p class="text-lg font-bold text-gray-900" id="systemHealth">-</p>
+            </div>
+            <div class="p-3 bg-green-100 rounded-full">
+                <i class="fas fa-heartbeat text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium" id="healthStatus">-</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Tabs -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="border-b border-gray-200">
+        <nav class="flex space-x-8 px-6" aria-label="Tabs">
+            <button onclick="switchTab('strategies')" id="tab-strategies"
+                class="py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                <i class="fas fa-puzzle-piece mr-2"></i>Strategies
+            </button>
+            <button onclick="switchTab('evaluation')" id="tab-evaluation"
+                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-calculator mr-2"></i>Signal Evaluation
+            </button>
+            <button onclick="switchTab('aggregation')" id="tab-aggregation"
+                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-cogs mr-2"></i>Aggregation Config
+            </button>
+            <button onclick="switchTab('test')" id="tab-test"
+                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-flask mr-2"></i>Testing
+            </button>
+        </nav>
+    </div>
+
+    <!-- Strategies Tab -->
+    <div id="content-strategies" class="p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Available Strategies</h3>
+            <button onclick="addNewStrategy()"
+                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-plus mr-2"></i>Add New Strategy
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" id="strategiesGrid">
+            <!-- Strategies will be loaded here -->
+            <div class="col-span-full text-center text-gray-500 py-12">
+                <i class="fas fa-spinner fa-spin text-3xl mb-4"></i>
+                <p class="text-lg">Loading strategies...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signal Evaluation Tab -->
+    <div id="content-evaluation" class="p-6 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Single Timeframe Evaluation -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Single Timeframe Evaluation</h4>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+                        <select id="evalSymbol"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Symbol...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Timeframe</label>
+                        <select id="evalTimeframe"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="1m">1 Minute</option>
+                            <option value="2m">2 Minutes</option>
+                            <option value="5m" selected>5 Minutes</option>
+                            <option value="15m">15 Minutes</option>
+                            <option value="30m">30 Minutes</option>
+                            <option value="1h">1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Strategies (leave empty for
+                            all)</label>
+                        <select id="evalStrategies" multiple
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+
+                    <button onclick="evaluateSingleTimeframe()"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-calculator mr-2"></i>Evaluate Signal
+                    </button>
+                </div>
+            </div>
+
+            <!-- Multi-timeframe Evaluation -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Multi-timeframe Evaluation</h4>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+                        <select id="multiEvalSymbol"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Symbol...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Strategies (leave empty for
+                            all)</label>
+                        <select id="multiEvalStrategies" multiple
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <!-- Will be populated dynamically -->
+                        </select>
+                    </div>
+
+                    <button onclick="evaluateMultiTimeframe()"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-layer-group mr-2"></i>Evaluate Multi-timeframe
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="evaluationResults" class="mt-6 hidden">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">Evaluation Results</h4>
+            <div class="bg-gray-50 rounded-lg p-6">
+                <pre id="resultsContent" class="text-sm text-gray-700 whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aggregation Config Tab -->
+    <div id="content-aggregation" class="p-6 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Current Config -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Current Configuration</h4>
+                <div id="currentConfig" class="space-y-3">
+                    <!-- Will be populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Update Config -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Update Configuration</h4>
+
+                <form id="aggregationConfigForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Aggregation Method</label>
+                        <select id="configMethod"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="weighted_average">Weighted Average</option>
+                            <option value="majority_vote">Majority Vote</option>
+                            <option value="consensus">Consensus</option>
+                            <option value="confidence_weighted">Confidence Weighted</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Minimum Strategies</label>
+                        <input type="number" id="configMinStrategies" min="1" max="10" value="2"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Consensus Threshold</label>
+                        <input type="number" id="configConsensusThreshold" min="0" max="1" step="0.1" value="0.6"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Confidence Threshold</label>
+                        <input type="number" id="configConfidenceThreshold" min="0" max="1" step="0.1" value="0.5"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <button type="button" onclick="updateAggregationConfig()"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Update Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testing Tab -->
+    <div id="content-test" class="p-6 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- System Test -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">System Test</h4>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Test Symbol</label>
+                        <select id="testSymbol"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select Symbol...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Test Timeframe</label>
+                        <select id="testTimeframe"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="5m" selected>5 Minutes</option>
+                            <option value="15m">15 Minutes</option>
+                            <option value="1h">1 Hour</option>
+                        </select>
+                    </div>
+
+                    <button onclick="runSystemTest()"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-play mr-2"></i>Run System Test
+                    </button>
+                </div>
+            </div>
+
+            <!-- Performance Test -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="text-lg font-semibold text-gray-900 mb-4">Performance Test</h4>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Iterations</label>
+                        <input type="number" id="testIterations" min="1" max="100" value="10"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <button onclick="runPerformanceTest()"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Run Performance Test
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div id="testResults" class="mt-6 hidden">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">Test Results</h4>
+            <div class="bg-gray-50 rounded-lg p-6">
+                <pre id="testResultsContent" class="text-sm text-gray-700 whitespace-pre-wrap"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Strategy Modal -->
+<div id="addStrategyModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Add New Strategy</h3>
+            </div>
+            <div class="p-6">
+                <form id="addStrategyForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Strategy Type</label>
+                            <select id="strategyType" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Type</option>
+                                <option value="rsi">RSI Strategy</option>
+                                <option value="bollinger">Bollinger Bands</option>
+                                <option value="volume">Volume Strategy</option>
+                                <option value="custom">Custom Strategy</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Strategy Name</label>
+                            <input type="text" id="strategyName" required placeholder="e.g., My Custom RSI"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="strategyDescription" rows="3" placeholder="Describe your strategy..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Weight</label>
+                                <input type="number" id="strategyWeight" min="0" max="2" step="0.1" value="1.0"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Min Confidence</label>
+                                <input type="number" id="strategyMinConfidence" min="0" max="1" step="0.1" value="0.5"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeAddStrategyModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="saveNewStrategy()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                    Add Strategy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTab = 'strategies';
+    let availableStrategies = [];
+    let availableSymbols = [];
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        loadSystemStatus();
+        loadStrategies();
+        loadSymbols();
+        loadAggregationConfig();
+
+        // Refresh data every 30 seconds
+        setInterval(() => {
+            loadSystemStatus();
+        }, 30000);
+    });
+
+    // Tab switching
+    function switchTab(tabName) {
+        // Hide all content
+        document.querySelectorAll('[id^="content-"]').forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+            tab.classList.remove('border-blue-500', 'text-blue-600');
+            tab.classList.add('border-transparent', 'text-gray-500');
+        });
+
+        // Show selected content
+        document.getElementById(`content-${tabName}`).classList.remove('hidden');
+
+        // Add active class to selected tab
+        document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
+        document.getElementById(`tab-${tabName}`).classList.add('border-blue-500', 'text-blue-600');
+
+        currentTab = tabName;
+    }
+
+    // Load system status
+    async function loadSystemStatus() {
+        try {
+            const response = await fetch('/api/extensible/strategies');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const strategies = result.data.strategies;
+                const totalStrategies = Object.keys(strategies).length;
+                const activeStrategies = Object.values(strategies).filter(s => s.is_active).length;
+
+                document.getElementById('totalStrategies').textContent = totalStrategies;
+                document.getElementById('activeStrategies').textContent = activeStrategies;
+            }
+
+            // Load aggregation config
+            const configResponse = await fetch('/api/extensible/aggregation/config');
+            const configResult = await configResponse.json();
+
+            if (configResult.status === 'success') {
+                const config = configResult.data;
+                document.getElementById('aggregationMethod').textContent = config.method.replace('_', ' ').toUpperCase();
+                document.getElementById('minStrategies').textContent = config.min_strategies;
+            }
+
+            document.getElementById('systemHealth').textContent = 'Healthy';
+            document.getElementById('healthStatus').textContent = 'All systems operational';
+
+        } catch (error) {
+            console.error('Error loading system status:', error);
+            document.getElementById('systemHealth').textContent = 'Error';
+            document.getElementById('healthStatus').textContent = 'Connection failed';
+        }
+    }
+
+    // Load strategies
+    async function loadStrategies() {
+        try {
+            const response = await fetch('/api/extensible/strategies');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                availableStrategies = Object.keys(result.data.strategies);
+                updateStrategiesGrid(result.data.strategies);
+                updateStrategySelects();
+            }
+        } catch (error) {
+            console.error('Error loading strategies:', error);
+        }
+    }
+
+    // Update strategies grid
+    function updateStrategiesGrid(strategies) {
+        const container = document.getElementById('strategiesGrid');
+
+        if (!strategies || Object.keys(strategies).length === 0) {
+            container.innerHTML = '<div class="col-span-full text-center text-gray-500 py-12"><p class="text-lg">No strategies found</p></div>';
+            return;
+        }
+
+        container.innerHTML = Object.entries(strategies).map(([name, strategy]) => {
+            const statusClass = strategy.is_active ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+            const statusIcon = strategy.is_active ? 'fa-check-circle' : 'fa-pause';
+            const statusText = strategy.is_active ? 'Active' : 'Inactive';
+
+            return `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <i class="fas fa-puzzle-piece text-blue-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-lg font-semibold text-gray-900">${name}</h3>
+                            <p class="text-sm text-gray-500">${strategy.description || 'No description'}</p>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                        <i class="fas ${statusIcon} mr-1"></i>
+                        ${statusText}
+                    </span>
+                </div>
+                
+                <div class="space-y-3 mb-4">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Weight:</span>
+                        <span class="text-sm font-medium text-blue-600">${strategy.weight}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Min Confidence:</span>
+                        <span class="text-sm font-medium text-green-600">${strategy.min_confidence}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Version:</span>
+                        <span class="text-sm font-medium text-gray-900">${strategy.version}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Timeframes:</span>
+                        <span class="text-sm font-medium text-gray-900">${strategy.supported_timeframes.join(', ')}</span>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-2">
+                    <button onclick="removeStrategy('${name}')" 
+                            class="flex-1 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                        <i class="fas fa-trash mr-1"></i>Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+        }).join('');
+    }
+
+    // Load symbols
+    async function loadSymbols() {
+        try {
+            const response = await fetch('/api/symbols');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                availableSymbols = result.data.symbols;
+                updateSymbolSelects();
+            }
+        } catch (error) {
+            console.error('Error loading symbols:', error);
+        }
+    }
+
+    // Update symbol selects
+    function updateSymbolSelects() {
+        const selects = ['evalSymbol', 'multiEvalSymbol', 'testSymbol'];
+
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.innerHTML = '<option value="">Select Symbol...</option>' +
+                    availableSymbols.map(symbol =>
+                        `<option value="${symbol.id}">${symbol.ticker} (${symbol.exchange})</option>`
+                    ).join('');
+            }
+        });
+    }
+
+    // Update strategy selects
+    function updateStrategySelects() {
+        const selects = ['evalStrategies', 'multiEvalStrategies'];
+
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.innerHTML = availableStrategies.map(strategy =>
+                    `<option value="${strategy}">${strategy}</option>`
+                ).join('');
+            }
+        });
+    }
+
+    // Load aggregation config
+    async function loadAggregationConfig() {
+        try {
+            const response = await fetch('/api/extensible/aggregation/config');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const config = result.data;
+                document.getElementById('currentConfig').innerHTML = `
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Method:</span>
+                        <span class="text-sm font-medium">${config.method.replace('_', ' ').toUpperCase()}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Min Strategies:</span>
+                        <span class="text-sm font-medium">${config.min_strategies}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Consensus Threshold:</span>
+                        <span class="text-sm font-medium">${config.consensus_threshold}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-600">Confidence Threshold:</span>
+                        <span class="text-sm font-medium">${config.confidence_threshold}</span>
+                    </div>
+                </div>
+            `;
+            }
+        } catch (error) {
+            console.error('Error loading aggregation config:', error);
+        }
+    }
+
+    // Add new strategy
+    function addNewStrategy() {
+        document.getElementById('addStrategyModal').classList.remove('hidden');
+    }
+
+    function closeAddStrategyModal() {
+        document.getElementById('addStrategyModal').classList.add('hidden');
+        document.getElementById('addStrategyForm').reset();
+    }
+
+    async function saveNewStrategy() {
+        const form = document.getElementById('addStrategyForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const strategyData = {
+            type: document.getElementById('strategyType').value,
+            name: document.getElementById('strategyName').value,
+            description: document.getElementById('strategyDescription').value,
+            weight: parseFloat(document.getElementById('strategyWeight').value),
+            min_confidence: parseFloat(document.getElementById('strategyMinConfidence').value)
+        };
+
+        try {
+            const response = await fetch('/api/extensible/strategies/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(strategyData)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showNotification('Strategy added successfully!', 'success');
+                closeAddStrategyModal();
+                loadStrategies();
+            } else {
+                showNotification('Error adding strategy: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error adding strategy:', error);
+            showNotification('Error adding strategy', 'error');
+        }
+    }
+
+    // Remove strategy
+    async function removeStrategy(strategyName) {
+        if (!confirm(`Are you sure you want to remove "${strategyName}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/extensible/strategies/${encodeURIComponent(strategyName)}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showNotification('Strategy removed successfully!', 'success');
+                loadStrategies();
+            } else {
+                showNotification('Error removing strategy: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error removing strategy:', error);
+            showNotification('Error removing strategy', 'error');
+        }
+    }
+
+    // Evaluate single timeframe
+    async function evaluateSingleTimeframe() {
+        const symbolId = document.getElementById('evalSymbol').value;
+        const timeframe = document.getElementById('evalTimeframe').value;
+        const strategies = Array.from(document.getElementById('evalStrategies').selectedOptions).map(option => option.value);
+
+        if (!symbolId) {
+            showNotification('Please select a symbol', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/extensible/evaluate/${symbolId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    timeframe: timeframe,
+                    strategies: strategies.length > 0 ? strategies : undefined
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                document.getElementById('evaluationResults').classList.remove('hidden');
+                document.getElementById('resultsContent').textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                showNotification('Error evaluating signal: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error evaluating signal:', error);
+            showNotification('Error evaluating signal', 'error');
+        }
+    }
+
+    // Evaluate multi-timeframe
+    async function evaluateMultiTimeframe() {
+        const symbolId = document.getElementById('multiEvalSymbol').value;
+        const strategies = Array.from(document.getElementById('multiEvalStrategies').selectedOptions).map(option => option.value);
+
+        if (!symbolId) {
+            showNotification('Please select a symbol', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/extensible/multi-timeframe/${symbolId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    strategies: strategies.length > 0 ? strategies : undefined
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                document.getElementById('evaluationResults').classList.remove('hidden');
+                document.getElementById('resultsContent').textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                showNotification('Error evaluating multi-timeframe: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error evaluating multi-timeframe:', error);
+            showNotification('Error evaluating multi-timeframe', 'error');
+        }
+    }
+
+    // Update aggregation config
+    async function updateAggregationConfig() {
+        const configData = {
+            method: document.getElementById('configMethod').value,
+            min_strategies: parseInt(document.getElementById('configMinStrategies').value),
+            consensus_threshold: parseFloat(document.getElementById('configConsensusThreshold').value),
+            confidence_threshold: parseFloat(document.getElementById('configConfidenceThreshold').value)
+        };
+
+        try {
+            const response = await fetch('/api/extensible/aggregation/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(configData)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showNotification('Configuration updated successfully!', 'success');
+                loadAggregationConfig();
+                loadSystemStatus();
+            } else {
+                showNotification('Error updating configuration: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error updating configuration:', error);
+            showNotification('Error updating configuration', 'error');
+        }
+    }
+
+    // Run system test
+    async function runSystemTest() {
+        const symbolId = document.getElementById('testSymbol').value;
+        const timeframe = document.getElementById('testTimeframe').value;
+
+        if (!symbolId) {
+            showNotification('Please select a symbol', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/extensible/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    symbol_id: parseInt(symbolId),
+                    timeframe: timeframe
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                document.getElementById('testResults').classList.remove('hidden');
+                document.getElementById('testResultsContent').textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                showNotification('Error running test: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error running test:', error);
+            showNotification('Error running test', 'error');
+        }
+    }
+
+    // Run performance test
+    async function runPerformanceTest() {
+        const iterations = parseInt(document.getElementById('testIterations').value);
+
+        try {
+            const startTime = performance.now();
+
+            // Run multiple evaluations
+            const promises = [];
+            for (let i = 0; i < iterations; i++) {
+                promises.push(fetch('/api/extensible/evaluate/1', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        timeframe: '5m'
+                    })
+                }));
+            }
+
+            await Promise.all(promises);
+
+            const endTime = performance.now();
+            const avgTime = (endTime - startTime) / iterations;
+
+            const results = {
+                iterations: iterations,
+                total_time: (endTime - startTime).toFixed(3) + ' ms',
+                average_time: avgTime.toFixed(3) + ' ms',
+                evaluations_per_second: (1000 / avgTime).toFixed(1)
+            };
+
+            document.getElementById('testResults').classList.remove('hidden');
+            document.getElementById('testResultsContent').textContent = JSON.stringify(results, null, 2);
+
+        } catch (error) {
+            console.error('Error running performance test:', error);
+            showNotification('Error running performance test', 'error');
+        }
+    }
+
+    // Test system
+    async function testSystem() {
+        try {
+            const response = await fetch('/api/extensible/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    symbol_id: 1,
+                    timeframe: '5m'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showNotification('System test completed successfully!', 'success');
+                console.log('Test results:', result.data);
+            } else {
+                showNotification('System test failed: ' + result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error testing system:', error);
+            showNotification('System test failed', 'error');
+        }
+    }
+
+    // Refresh data
+    function refreshData() {
+        loadSystemStatus();
+        loadStrategies();
+        loadSymbols();
+        loadAggregationConfig();
+        showNotification('Data refreshed', 'success');
+    }
+
+    // Show notification
+    function showNotification(message, type) {
+        // Simple notification - you can enhance this with a proper notification system
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                    type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+            }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 3000);
+    }
+</script>
+{% endblock %}

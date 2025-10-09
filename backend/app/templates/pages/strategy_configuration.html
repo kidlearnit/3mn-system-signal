@@ -1,0 +1,483 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Strategy Configuration - Trading Signals{% endblock %}
+
+{% block page_title %}Strategy Configuration{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-sliders-h text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Strategy Configuration</h1>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button onclick="saveConfiguration()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-save mr-2"></i>
+            Save Configuration
+        </button>
+
+        <button onclick="resetConfiguration()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors">
+            <i class="fas fa-undo mr-2"></i>
+            Reset to Defaults
+        </button>
+
+        <button onclick="exportConfiguration()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-download mr-2"></i>
+            Export Config
+        </button>
+    </div>
+</div>
+
+<!-- Strategy Selection -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Select Strategy</h3>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Strategy Card 1 -->
+            <div class="strategy-card p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all duration-300"
+                onclick="selectStrategy('macd-trend')" data-strategy="macd-trend">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-chart-line text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">MACD Trend</h4>
+                        <p class="text-sm text-gray-500">Trend Following</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Uses MACD indicator to identify trend changes and generate
+                    buy/sell signals.</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">Success Rate: 82.5%</span>
+                    <span
+                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                </div>
+            </div>
+
+            <!-- Strategy Card 2 -->
+            <div class="strategy-card p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all duration-300"
+                onclick="selectStrategy('rsi-mean-reversion')" data-strategy="rsi-mean-reversion">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-exchange-alt text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">RSI Mean Reversion</h4>
+                        <p class="text-sm text-gray-500">Mean Reversion</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Uses RSI to identify overbought/oversold conditions for mean
+                    reversion trades.</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">Success Rate: 75.2%</span>
+                    <span
+                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Paused
+                    </span>
+                </div>
+            </div>
+
+            <!-- Strategy Card 3 -->
+            <div class="strategy-card p-4 border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-500 hover:shadow-lg transition-all duration-300"
+                onclick="selectStrategy('momentum-breakout')" data-strategy="momentum-breakout">
+                <div class="flex items-center mb-3">
+                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-rocket text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900">Momentum Breakout</h4>
+                        <p class="text-sm text-gray-500">Momentum</p>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">Identifies momentum breakouts using volume and price action
+                    analysis.</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-500">Success Rate: 68.9%</span>
+                    <span
+                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Tabs -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="border-b border-gray-200">
+        <nav class="flex space-x-8 px-6" aria-label="Tabs">
+            <button onclick="switchConfigTab('indicators')" id="indicators-tab"
+                class="py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                Indicators
+            </button>
+            <button onclick="switchConfigTab('timeframes')" id="timeframes-tab"
+                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Timeframes
+            </button>
+            <button onclick="switchConfigTab('thresholds')" id="thresholds-tab"
+                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Thresholds
+            </button>
+            <button onclick="switchConfigTab('rules')" id="rules-tab"
+                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Trading Rules
+            </button>
+        </nav>
+    </div>
+
+    <!-- Indicators Configuration -->
+    <div id="indicators-content" class="p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Indicator Settings</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- MACD Settings -->
+            <div class="space-y-6">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                        MACD Settings
+                    </h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fast Period</label>
+                            <input type="number" value="12" min="1" max="50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Slow Period</label>
+                            <input type="number" value="26" min="1" max="100"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Signal Period</label>
+                            <input type="number" value="9" min="1" max="50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RSI Settings -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-chart-bar mr-2 text-green-600"></i>
+                        RSI Settings
+                    </h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                            <input type="number" value="14" min="1" max="50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Overbought Level</label>
+                            <input type="number" value="70" min="50" max="100"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Oversold Level</label>
+                            <input type="number" value="30" min="0" max="50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bollinger Bands Settings -->
+            <div class="space-y-6">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-chart-area mr-2 text-purple-600"></i>
+                        Bollinger Bands
+                    </h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                            <input type="number" value="20" min="1" max="50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Standard Deviation</label>
+                            <input type="number" value="2" min="1" max="5" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Moving Averages -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-orange-600"></i>
+                        Moving Averages
+                    </h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">SMA Period</label>
+                            <input type="number" value="50" min="1" max="200"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">EMA Period</label>
+                            <input type="number" value="21" min="1" max="100"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeframes Configuration -->
+    <div id="timeframes-content" class="p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Timeframe Settings</h3>
+        <div class="space-y-6">
+            <!-- Timeframe Weights -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="font-semibold text-gray-900 mb-4">Timeframe Weights</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">1 Minute</span>
+                        <input type="range" min="0" max="100" value="20"
+                            class="w-20 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-sm text-gray-500 w-8">20%</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">5 Minutes</span>
+                        <input type="range" min="0" max="100" value="25"
+                            class="w-20 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-sm text-gray-500 w-8">25%</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">15 Minutes</span>
+                        <input type="range" min="0" max="100" value="30"
+                            class="w-20 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-sm text-gray-500 w-8">30%</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">1 Hour</span>
+                        <input type="range" min="0" max="100" value="15"
+                            class="w-20 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-sm text-gray-500 w-8">15%</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">4 Hours</span>
+                        <input type="range" min="0" max="100" value="7"
+                            class="w-20 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-sm text-gray-500 w-8">7%</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">1 Day</span>
+                        <input type="range" min="0" max="100" value="3"
+                            class="w-20 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-sm text-gray-500 w-8">3%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thresholds Configuration -->
+    <div id="thresholds-content" class="p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Threshold Settings</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Buy Thresholds -->
+            <div class="bg-green-50 rounded-lg p-6">
+                <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-arrow-up mr-2 text-green-600"></i>
+                    Buy Thresholds
+                </h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">MACD Signal Strength</label>
+                        <input type="number" value="0.5" min="0" max="2" step="0.1"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">RSI Oversold Level</label>
+                        <input type="number" value="30" min="0" max="50"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Volume Increase %</label>
+                        <input type="number" value="20" min="0" max="100"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sell Thresholds -->
+            <div class="bg-red-50 rounded-lg p-6">
+                <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-arrow-down mr-2 text-red-600"></i>
+                    Sell Thresholds
+                </h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">MACD Signal Strength</label>
+                        <input type="number" value="-0.5" min="-2" max="0" step="0.1"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">RSI Overbought Level</label>
+                        <input type="number" value="70" min="50" max="100"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Stop Loss %</label>
+                        <input type="number" value="5" min="1" max="20"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trading Rules Configuration -->
+    <div id="rules-content" class="p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Trading Rules</h3>
+        <div class="space-y-6">
+            <!-- Risk Management -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-shield-alt mr-2 text-blue-600"></i>
+                    Risk Management
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Max Position Size %</label>
+                        <input type="number" value="10" min="1" max="100"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Max Daily Loss %</label>
+                        <input type="number" value="5" min="1" max="50"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Hours -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h4 class="font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-clock mr-2 text-green-600"></i>
+                    Trading Hours
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                        <input type="time" value="09:30"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Time</label>
+                        <input type="time" value="16:00"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Strategy configuration functionality
+    let selectedStrategy = null;
+
+    function selectStrategy(strategyId) {
+        // Remove previous selection
+        document.querySelectorAll('.strategy-card').forEach(card => {
+            card.classList.remove('border-blue-500', 'bg-blue-50');
+            card.classList.add('border-gray-200');
+        });
+
+        // Add selection to clicked card
+        const card = document.querySelector(`[data-strategy="${strategyId}"]`);
+        card.classList.remove('border-gray-200');
+        card.classList.add('border-blue-500', 'bg-blue-50');
+
+        selectedStrategy = strategyId;
+        console.log('Selected strategy:', strategyId);
+    }
+
+    function switchConfigTab(tabName) {
+        // Hide all content
+        document.querySelectorAll('[id$="-content"]').forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+            tab.classList.remove('border-blue-500', 'text-blue-600');
+            tab.classList.add('border-transparent', 'text-gray-500');
+        });
+
+        // Show selected content
+        document.getElementById(tabName + '-content').classList.remove('hidden');
+
+        // Add active class to selected tab
+        const activeTab = document.getElementById(tabName + '-tab');
+        activeTab.classList.remove('border-transparent', 'text-gray-500');
+        activeTab.classList.add('border-blue-500', 'text-blue-600');
+    }
+
+    function saveConfiguration() {
+        if (!selectedStrategy) {
+            alert('Please select a strategy first');
+            return;
+        }
+
+        console.log('Saving configuration for strategy:', selectedStrategy);
+        // Implement save functionality
+        showNotification('Configuration saved successfully!', 'success');
+    }
+
+    function resetConfiguration() {
+        if (confirm('Are you sure you want to reset all configuration to defaults?')) {
+            console.log('Resetting configuration...');
+            // Reset form values
+            showNotification('Configuration reset to defaults!', 'warning');
+        }
+    }
+
+    function exportConfiguration() {
+        console.log('Exporting configuration...');
+        // Implement export functionality
+        showNotification('Configuration exported!', 'info');
+    }
+
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                    type === 'error' ? 'bg-red-500 text-white' :
+                        'bg-blue-500 text-white'
+            }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function () {
+        // Set default tab
+        switchConfigTab('indicators');
+
+        // Set default strategy
+        selectStrategy('macd-trend');
+    });
+</script>
+{% endblock %}

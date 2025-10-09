@@ -1,0 +1,882 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Strategy Setup Guide - Trading Signals{% endblock %}
+
+{% block page_title %}Strategy Setup Guide{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-map-signs text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Strategy Setup Guide</h1>
+    </div>
+    <div class="flex flex-wrap gap-3">
+        <button onclick="startGuidedSetup()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-play mr-2"></i>
+            Start Guided Setup
+        </button>
+    </div>
+</div>
+
+<!-- Quick Overview -->
+<div class="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-lg font-semibold text-blue-900">Hướng dẫn thiết lập chiến lược cho 1 mã cổ phiếu</h3>
+            <p class="mt-2 text-blue-700">
+                Hướng dẫn từng bước để thiết lập chiến lược trading cho một mã cổ phiếu cụ thể.
+                Bao gồm: Chọn symbol, cấu hình strategy, thiết lập parameters, và test.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Step-by-Step Guide -->
+<div class="space-y-8">
+    <!-- Step 1: Choose Symbol -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center mb-4">
+            <div
+                class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                1
+            </div>
+            <h3 class="ml-3 text-xl font-semibold text-gray-900">Chọn Mã Cổ Phiếu</h3>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-3">📊 Danh sách Symbols có sẵn:</h4>
+                <div id="availableSymbols" class="space-y-2">
+                    <div class="text-center text-gray-500 py-4">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Đang tải danh sách symbols...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-3">🎯 Chọn Symbol:</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+                        <select id="selectedSymbol"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Chọn mã cổ phiếu...</option>
+                        </select>
+                    </div>
+
+                    <div id="symbolInfo" class="hidden bg-gray-50 rounded-lg p-4">
+                        <h5 class="font-medium text-gray-900 mb-2">Thông tin Symbol:</h5>
+                        <div id="symbolDetails" class="text-sm text-gray-600"></div>
+                    </div>
+
+                    <button onclick="selectSymbol()" id="selectSymbolBtn" disabled
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+                        Chọn Symbol này
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Choose Strategy Type -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center mb-4">
+            <div
+                class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                2
+            </div>
+            <h3 class="ml-3 text-xl font-semibold text-gray-900">Chọn Loại Chiến Lược</h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- MACD Strategy -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer strategy-card"
+                data-strategy="macd">
+                <div class="flex items-center mb-3">
+                    <div class="p-2 bg-blue-100 rounded-lg">
+                        <i class="fas fa-chart-line text-blue-600"></i>
+                    </div>
+                    <h4 class="ml-3 font-semibold text-gray-900">MACD Strategy</h4>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">
+                    Chiến lược dựa trên MACD (Moving Average Convergence Divergence) với zone system.
+                </p>
+                <div class="text-xs text-gray-500">
+                    <div>✅ Zone-based signals</div>
+                    <div>✅ Multi-timeframe</div>
+                    <div>✅ Database parameters</div>
+                </div>
+            </div>
+
+            <!-- SMA Strategy -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer strategy-card"
+                data-strategy="sma">
+                <div class="flex items-center mb-3">
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <i class="fas fa-chart-area text-green-600"></i>
+                    </div>
+                    <h4 class="ml-3 font-semibold text-gray-900">SMA Strategy</h4>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">
+                    Chiến lược dựa trên Simple Moving Average với triple confirmation.
+                </p>
+                <div class="text-xs text-gray-500">
+                    <div>✅ Triple confirmation</div>
+                    <div>✅ Multi-timeframe</div>
+                    <div>✅ Trend following</div>
+                </div>
+            </div>
+
+            <!-- Hybrid Strategy -->
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer strategy-card"
+                data-strategy="hybrid">
+                <div class="flex items-center mb-3">
+                    <div class="p-2 bg-purple-100 rounded-lg">
+                        <i class="fas fa-puzzle-piece text-purple-600"></i>
+                    </div>
+                    <h4 class="ml-3 font-semibold text-gray-900">Hybrid Strategy</h4>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">
+                    Kết hợp MACD + SMA với weighted aggregation.
+                </p>
+                <div class="text-xs text-gray-500">
+                    <div>✅ MACD + SMA</div>
+                    <div>✅ Weighted aggregation</div>
+                    <div>✅ High accuracy</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="selectedStrategyInfo" class="hidden mt-6 bg-blue-50 rounded-lg p-4">
+            <h4 class="font-medium text-blue-900 mb-2">Chiến lược đã chọn:</h4>
+            <div id="strategyDetails" class="text-sm text-blue-700"></div>
+        </div>
+    </div>
+
+    <!-- Step 3: Configure Parameters -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center mb-4">
+            <div
+                class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                3
+            </div>
+            <h3 class="ml-3 text-xl font-semibold text-gray-900">Cấu Hình Parameters</h3>
+        </div>
+
+        <div id="parameterConfig" class="space-y-6">
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-cog text-3xl mb-3"></i>
+                <p>Vui lòng chọn chiến lược ở bước 2 để cấu hình parameters</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Test Strategy -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center mb-4">
+            <div
+                class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                4
+            </div>
+            <h3 class="ml-3 text-xl font-semibold text-gray-900">Test Chiến Lược</h3>
+        </div>
+
+        <div id="testSection" class="space-y-4">
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-flask text-3xl mb-3"></i>
+                <p>Vui lòng hoàn thành các bước trước để test chiến lược</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 5: Deploy Strategy -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center mb-4">
+            <div
+                class="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                5
+            </div>
+            <h3 class="ml-3 text-xl font-semibold text-gray-900">Triển Khai Chiến Lược</h3>
+        </div>
+
+        <div id="deploySection" class="space-y-4">
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-rocket text-3xl mb-3"></i>
+                <p>Vui lòng hoàn thành các bước trước để triển khai chiến lược</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Summary -->
+<div class="mt-8 bg-gray-50 rounded-xl p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Tóm tắt tiến độ</h3>
+    <div class="space-y-3">
+        <div class="flex items-center">
+            <div id="step1-status" class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                <i class="fas fa-times text-white text-xs"></i>
+            </div>
+            <span class="text-sm text-gray-600">Bước 1: Chọn mã cổ phiếu</span>
+        </div>
+        <div class="flex items-center">
+            <div id="step2-status" class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                <i class="fas fa-times text-white text-xs"></i>
+            </div>
+            <span class="text-sm text-gray-600">Bước 2: Chọn loại chiến lược</span>
+        </div>
+        <div class="flex items-center">
+            <div id="step3-status" class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                <i class="fas fa-times text-white text-xs"></i>
+            </div>
+            <span class="text-sm text-gray-600">Bước 3: Cấu hình parameters</span>
+        </div>
+        <div class="flex items-center">
+            <div id="step4-status" class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                <i class="fas fa-times text-white text-xs"></i>
+            </div>
+            <span class="text-sm text-gray-600">Bước 4: Test chiến lược</span>
+        </div>
+        <div class="flex items-center">
+            <div id="step5-status" class="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                <i class="fas fa-times text-white text-xs"></i>
+            </div>
+            <span class="text-sm text-gray-600">Bước 5: Triển khai chiến lược</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStep = 0;
+    let selectedSymbol = null;
+    let selectedStrategy = null;
+    let strategyConfig = {};
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function () {
+        loadAvailableSymbols();
+        setupStrategyCards();
+    });
+
+    // Load available symbols
+    async function loadAvailableSymbols() {
+        try {
+            const response = await fetch('/api/symbols');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                const symbols = result.data.symbols;
+                updateSymbolsList(symbols);
+                updateSymbolSelect(symbols);
+            }
+        } catch (error) {
+            console.error('Error loading symbols:', error);
+            document.getElementById('availableSymbols').innerHTML =
+                '<div class="text-center text-red-500 py-4"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><p>Lỗi tải danh sách symbols</p></div>';
+        }
+    }
+
+    // Update symbols list
+    function updateSymbolsList(symbols) {
+        const container = document.getElementById('availableSymbols');
+
+        if (!symbols || symbols.length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-500 py-4"><p>Không có symbols nào</p></div>';
+            return;
+        }
+
+        // Group by exchange
+        const grouped = symbols.reduce((acc, symbol) => {
+            if (!acc[symbol.exchange]) {
+                acc[symbol.exchange] = [];
+            }
+            acc[symbol.exchange].push(symbol);
+            return acc;
+        }, {});
+
+        container.innerHTML = Object.entries(grouped).map(([exchange, exchangeSymbols]) => `
+        <div class="mb-4">
+            <h5 class="font-medium text-gray-900 mb-2">${exchange} (${exchangeSymbols.length} symbols)</h5>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                ${exchangeSymbols.slice(0, 6).map(symbol => `
+                    <div class="text-sm text-gray-600 bg-gray-50 rounded px-2 py-1">
+                        ${symbol.ticker}
+                    </div>
+                `).join('')}
+                ${exchangeSymbols.length > 6 ? `<div class="text-sm text-gray-500">+${exchangeSymbols.length - 6} more...</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+    }
+
+    // Update symbol select
+    function updateSymbolSelect(symbols) {
+        const select = document.getElementById('selectedSymbol');
+        select.innerHTML = '<option value="">Chọn mã cổ phiếu...</option>' +
+            symbols.map(symbol =>
+                `<option value="${symbol.id}">${symbol.ticker} (${symbol.exchange})</option>`
+            ).join('');
+    }
+
+    // Select symbol
+    function selectSymbol() {
+        const symbolId = document.getElementById('selectedSymbol').value;
+        if (!symbolId) return;
+
+        // Get symbol details
+        const symbolOption = document.getElementById('selectedSymbol').selectedOptions[0];
+        const symbolText = symbolOption.textContent;
+
+        selectedSymbol = {
+            id: symbolId,
+            ticker: symbolText.split(' ')[0],
+            exchange: symbolText.split('(')[1].replace(')', '')
+        };
+
+        // Update UI
+        document.getElementById('symbolInfo').classList.remove('hidden');
+        document.getElementById('symbolDetails').innerHTML = `
+        <div><strong>Ticker:</strong> ${selectedSymbol.ticker}</div>
+        <div><strong>Exchange:</strong> ${selectedSymbol.exchange}</div>
+        <div><strong>ID:</strong> ${selectedSymbol.id}</div>
+    `;
+
+        // Update progress
+        updateStepStatus(1, true);
+        currentStep = 1;
+
+        // Enable next step
+        enableStep(2);
+    }
+
+    // Setup strategy cards
+    function setupStrategyCards() {
+        document.querySelectorAll('.strategy-card').forEach(card => {
+            card.addEventListener('click', function () {
+                // Remove previous selection
+                document.querySelectorAll('.strategy-card').forEach(c => {
+                    c.classList.remove('border-blue-500', 'bg-blue-50');
+                    c.classList.add('border-gray-200');
+                });
+
+                // Add selection to clicked card
+                this.classList.remove('border-gray-200');
+                this.classList.add('border-blue-500', 'bg-blue-50');
+
+                // Get strategy type
+                selectedStrategy = this.dataset.strategy;
+
+                // Update strategy info
+                updateStrategyInfo(selectedStrategy);
+
+                // Update progress
+                updateStepStatus(2, true);
+                currentStep = 2;
+
+                // Enable next step
+                enableStep(3);
+
+                // Load parameter configuration
+                loadParameterConfig(selectedStrategy);
+            });
+        });
+    }
+
+    // Update strategy info
+    function updateStrategyInfo(strategy) {
+        const strategyInfo = {
+            macd: {
+                name: 'MACD Strategy',
+                description: 'Chiến lược dựa trên MACD với zone system',
+                features: ['Zone-based signals', 'Multi-timeframe', 'Database parameters']
+            },
+            sma: {
+                name: 'SMA Strategy',
+                description: 'Chiến lược dựa trên Simple Moving Average',
+                features: ['Triple confirmation', 'Multi-timeframe', 'Trend following']
+            },
+            hybrid: {
+                name: 'Hybrid Strategy',
+                description: 'Kết hợp MACD + SMA với weighted aggregation',
+                features: ['MACD + SMA', 'Weighted aggregation', 'High accuracy']
+            }
+        };
+
+        const info = strategyInfo[strategy];
+        document.getElementById('selectedStrategyInfo').classList.remove('hidden');
+        document.getElementById('strategyDetails').innerHTML = `
+        <div><strong>Tên:</strong> ${info.name}</div>
+        <div><strong>Mô tả:</strong> ${info.description}</div>
+        <div><strong>Tính năng:</strong> ${info.features.join(', ')}</div>
+    `;
+    }
+
+    // Load parameter configuration
+    function loadParameterConfig(strategy) {
+        const container = document.getElementById('parameterConfig');
+
+        if (strategy === 'macd') {
+            container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">MACD Parameters</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Fast Period</label>
+                            <input type="number" id="macdFast" value="12" min="1" max="50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Slow Period</label>
+                            <input type="number" id="macdSlow" value="26" min="1" max="100"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Signal Period</label>
+                            <input type="number" id="macdSignal" value="9" min="1" max="50"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Zone Configuration</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Use Zone System</label>
+                            <input type="checkbox" id="useZones" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Market Template</label>
+                            <select id="marketTemplate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="1">VN Market Template</option>
+                                <option value="2">US Market Template</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Min Confidence</label>
+                            <input type="number" id="minConfidence" value="0.6" min="0" max="1" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <button onclick="saveMacdConfig()"
+                    class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                    Lưu cấu hình MACD
+                </button>
+            </div>
+        `;
+        } else if (strategy === 'sma') {
+            container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">SMA Parameters</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">SMA 18 Period</label>
+                            <input type="number" id="sma18" value="18" min="1" max="100"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">SMA 36 Period</label>
+                            <input type="number" id="sma36" value="36" min="1" max="200"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">SMA 48 Period</label>
+                            <input type="number" id="sma48" value="48" min="1" max="300"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">SMA 144 Period</label>
+                            <input type="number" id="sma144" value="144" min="1" max="500"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Confirmation Settings</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Triple Confirmation</label>
+                            <input type="checkbox" id="tripleConfirmation" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Min Confirmation Count</label>
+                            <input type="number" id="minConfirmation" value="3" min="1" max="5"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Min Confidence</label>
+                            <input type="number" id="minConfidence" value="0.5" min="0" max="1" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <button onclick="saveSmaConfig()"
+                    class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                    Lưu cấu hình SMA
+                </button>
+            </div>
+        `;
+        } else if (strategy === 'hybrid') {
+            container.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Hybrid Parameters</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">MACD Weight</label>
+                            <input type="number" id="macdWeight" value="0.6" min="0" max="1" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">SMA Weight</label>
+                            <input type="number" id="smaWeight" value="0.4" min="0" max="1" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Aggregation Method</label>
+                            <select id="aggregationMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="weighted_average">Weighted Average</option>
+                                <option value="majority_vote">Majority Vote</option>
+                                <option value="consensus">Consensus</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-4">Threshold Settings</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Consensus Threshold</label>
+                            <input type="number" id="consensusThreshold" value="0.7" min="0" max="1" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Confidence Threshold</label>
+                            <input type="number" id="confidenceThreshold" value="0.6" min="0" max="1" step="0.1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Min Strategies</label>
+                            <input type="number" id="minStrategies" value="2" min="1" max="10"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6">
+                <button onclick="saveHybridConfig()"
+                    class="px-6 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
+                    Lưu cấu hình Hybrid
+                </button>
+            </div>
+        `;
+        }
+    }
+
+    // Save configurations
+    function saveMacdConfig() {
+        strategyConfig = {
+            type: 'macd',
+            parameters: {
+                fast_period: parseInt(document.getElementById('macdFast').value),
+                slow_period: parseInt(document.getElementById('macdSlow').value),
+                signal_period: parseInt(document.getElementById('macdSignal').value),
+                use_zones: document.getElementById('useZones').checked,
+                market_template: document.getElementById('marketTemplate').value,
+                min_confidence: parseFloat(document.getElementById('minConfidence').value)
+            }
+        };
+
+        updateStepStatus(3, true);
+        currentStep = 3;
+        enableStep(4);
+        loadTestSection();
+    }
+
+    function saveSmaConfig() {
+        strategyConfig = {
+            type: 'sma',
+            parameters: {
+                sma_18: parseInt(document.getElementById('sma18').value),
+                sma_36: parseInt(document.getElementById('sma36').value),
+                sma_48: parseInt(document.getElementById('sma48').value),
+                sma_144: parseInt(document.getElementById('sma144').value),
+                triple_confirmation: document.getElementById('tripleConfirmation').checked,
+                min_confirmation: parseInt(document.getElementById('minConfirmation').value),
+                min_confidence: parseFloat(document.getElementById('minConfidence').value)
+            }
+        };
+
+        updateStepStatus(3, true);
+        currentStep = 3;
+        enableStep(4);
+        loadTestSection();
+    }
+
+    function saveHybridConfig() {
+        strategyConfig = {
+            type: 'hybrid',
+            parameters: {
+                macd_weight: parseFloat(document.getElementById('macdWeight').value),
+                sma_weight: parseFloat(document.getElementById('smaWeight').value),
+                aggregation_method: document.getElementById('aggregationMethod').value,
+                consensus_threshold: parseFloat(document.getElementById('consensusThreshold').value),
+                confidence_threshold: parseFloat(document.getElementById('confidenceThreshold').value),
+                min_strategies: parseInt(document.getElementById('minStrategies').value)
+            }
+        };
+
+        updateStepStatus(3, true);
+        currentStep = 3;
+        enableStep(4);
+        loadTestSection();
+    }
+
+    // Load test section
+    function loadTestSection() {
+        const container = document.getElementById('testSection');
+
+        container.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Test Configuration</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Test Timeframe</label>
+                        <select id="testTimeframe" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="5m">5 Minutes</option>
+                            <option value="15m">15 Minutes</option>
+                            <option value="1h">1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Test Period (days)</label>
+                        <input type="number" id="testPeriod" value="7" min="1" max="30"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button onclick="runStrategyTest()"
+                        class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-play mr-2"></i>Chạy Test
+                    </button>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Test Results</h4>
+                <div id="testResults" class="bg-gray-50 rounded-lg p-4 min-h-32">
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-chart-line text-2xl mb-2"></i>
+                        <p>Kết quả test sẽ hiển thị ở đây</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    }
+
+    // Run strategy test
+    async function runStrategyTest() {
+        const resultsContainer = document.getElementById('testResults');
+        resultsContainer.innerHTML = `
+        <div class="text-center text-blue-500">
+            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+            <p>Đang chạy test...</p>
+        </div>
+    `;
+
+        try {
+            // Simulate test
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            resultsContainer.innerHTML = `
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Total Signals:</span>
+                    <span class="text-sm font-medium text-gray-900">24</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Buy Signals:</span>
+                    <span class="text-sm font-medium text-green-600">14</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Sell Signals:</span>
+                    <span class="text-sm font-medium text-red-600">10</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Success Rate:</span>
+                    <span class="text-sm font-medium text-blue-600">75%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Avg Confidence:</span>
+                    <span class="text-sm font-medium text-purple-600">0.68</span>
+                </div>
+            </div>
+        `;
+
+            updateStepStatus(4, true);
+            currentStep = 4;
+            enableStep(5);
+            loadDeploySection();
+
+        } catch (error) {
+            resultsContainer.innerHTML = `
+            <div class="text-center text-red-500">
+                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                <p>Lỗi khi chạy test</p>
+            </div>
+        `;
+        }
+    }
+
+    // Load deploy section
+    function loadDeploySection() {
+        const container = document.getElementById('deploySection');
+
+        container.innerHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Deployment Settings</h4>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Strategy Name</label>
+                        <input type="text" id="strategyName" value="${selectedSymbol.ticker} ${selectedStrategy.toUpperCase()} Strategy"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="strategyDescription" rows="3" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">Strategy for ${selectedSymbol.ticker} using ${selectedStrategy.toUpperCase()} approach</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Auto Start</label>
+                        <input type="checkbox" id="autoStart" checked
+                            class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Summary</h4>
+                <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+                    <div><strong>Symbol:</strong> ${selectedSymbol.ticker} (${selectedSymbol.exchange})</div>
+                    <div><strong>Strategy:</strong> ${selectedStrategy.toUpperCase()}</div>
+                    <div><strong>Parameters:</strong> ${Object.keys(strategyConfig.parameters).length} configured</div>
+                    <div><strong>Test Result:</strong> 75% success rate</div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-6 flex space-x-4">
+            <button onclick="deployStrategy()"
+                class="px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                <i class="fas fa-rocket mr-2"></i>Deploy Strategy
+            </button>
+            <button onclick="saveAsTemplate()"
+                class="px-6 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                <i class="fas fa-save mr-2"></i>Save as Template
+            </button>
+        </div>
+    `;
+    }
+
+    // Deploy strategy
+    async function deployStrategy() {
+        try {
+            // Simulate deployment
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            updateStepStatus(5, true);
+            currentStep = 5;
+
+            // Show success message
+            alert('Chiến lược đã được triển khai thành công!');
+
+        } catch (error) {
+            alert('Lỗi khi triển khai chiến lược');
+        }
+    }
+
+    // Save as template
+    function saveAsTemplate() {
+        alert('Template đã được lưu thành công!');
+    }
+
+    // Update step status
+    function updateStepStatus(step, completed) {
+        const statusElement = document.getElementById(`step${step}-status`);
+        if (completed) {
+            statusElement.className = 'w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-3';
+            statusElement.innerHTML = '<i class="fas fa-check text-white text-xs"></i>';
+        } else {
+            statusElement.className = 'w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center mr-3';
+            statusElement.innerHTML = '<i class="fas fa-times text-white text-xs"></i>';
+        }
+    }
+
+    // Enable step
+    function enableStep(step) {
+        // This would enable the next step in the UI
+        console.log(`Enabling step ${step}`);
+    }
+
+    // Start guided setup
+    function startGuidedSetup() {
+        // Reset all steps
+        for (let i = 1; i <= 5; i++) {
+            updateStepStatus(i, false);
+        }
+
+        // Reset selections
+        selectedSymbol = null;
+        selectedStrategy = null;
+        strategyConfig = {};
+        currentStep = 0;
+
+        // Reset UI
+        document.getElementById('selectedSymbol').value = '';
+        document.getElementById('symbolInfo').classList.add('hidden');
+        document.getElementById('selectedStrategyInfo').classList.add('hidden');
+
+        // Remove strategy card selections
+        document.querySelectorAll('.strategy-card').forEach(card => {
+            card.classList.remove('border-blue-500', 'bg-blue-50');
+            card.classList.add('border-gray-200');
+        });
+
+        // Reset parameter config
+        document.getElementById('parameterConfig').innerHTML = `
+        <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-cog text-3xl mb-3"></i>
+            <p>Vui lòng chọn chiến lược ở bước 2 để cấu hình parameters</p>
+        </div>
+    `;
+
+        // Reset test section
+        document.getElementById('testSection').innerHTML = `
+        <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-flask text-3xl mb-3"></i>
+            <p>Vui lòng hoàn thành các bước trước để test chiến lược</p>
+        </div>
+    `;
+
+        // Reset deploy section
+        document.getElementById('deploySection').innerHTML = `
+        <div class="text-center text-gray-500 py-8">
+            <i class="fas fa-rocket text-3xl mb-3"></i>
+            <p>Vui lòng hoàn thành các bước trước để triển khai chiến lược</p>
+        </div>
+    `;
+    }
+</script>
+{% endblock %}

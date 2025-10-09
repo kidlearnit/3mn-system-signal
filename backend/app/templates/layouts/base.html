@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Trading Signals System{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="h-full">
+    <div class="min-h-full">
+        <!-- Sidebar -->
+        <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out"
+            id="sidebar" x-data="{ sidebarOpen: window.innerWidth >= 768 }"
+            :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
+            <div class="flex items-center justify-center h-16 bg-gradient-to-r from-blue-600 to-blue-700">
+                <div class="flex items-center">
+                    <i class="fas fa-chart-line text-white text-2xl mr-3"></i>
+                    <h1 class="text-xl font-bold text-white">Trading Signals</h1>
+                </div>
+            </div>
+
+            <nav class="mt-8 px-4">
+                <div class="space-y-2">
+                    <!-- Quick Access -->
+                    <div class="px-4 py-2">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Quick Access</h3>
+                        <div class="space-y-1">
+                            <a href="/charts"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
+                                <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                                <span class="font-medium">Live Charts</span>
+                                <span class="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Main Navigation -->
+                    <div class="px-4 py-2">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Navigation</h3>
+                        <div class="space-y-1">
+                            <!-- Dashboard -->
+                            <a href="/dashboard"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-tachometer-alt mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Dashboard</span>
+                            </a>
+
+                            <!-- Symbols -->
+                            <a href="/symbols"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-coins mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Symbols</span>
+                            </a>
+
+                            <!-- Strategies -->
+                            <a href="/strategies"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-chess mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Strategies</span>
+                            </a>
+
+                            <!-- Signals -->
+                            <a href="/signals"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-bell mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Signals</span>
+                            </a>
+
+                            <!-- Charts -->
+                            <a href="/charts"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-chart-line mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Trading Charts</span>
+                                <span
+                                    class="ml-auto bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Live</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Tools & Configuration -->
+                    <div class="px-4 py-2">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tools & Config
+                        </h3>
+                        <div class="space-y-1">
+
+                            <!-- Configuration -->
+                            <a href="/config"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-cog mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Configuration</span>
+                            </a>
+
+                            <!-- Worker Monitoring -->
+                            <a href="/worker-monitoring"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-server mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Worker Monitoring</span>
+                            </a>
+
+                            <!-- Multi-timeframe Charts -->
+                            <a href="/multi-timeframe-charts"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-chart-bar mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Multi-timeframe</span>
+                            </a>
+
+                            <!-- Strategy Config -->
+                            <a href="/strategy-configuration"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-sliders-h mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Strategy Config</span>
+                            </a>
+
+                            <!-- Extensible Strategy System -->
+                            <a href="/extensible-strategies"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-puzzle-piece mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Extensible Strategies</span>
+                                <span
+                                    class="ml-auto bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">New</span>
+                            </a>
+
+                            <!-- Strategy Setup Guide -->
+                            <a href="/strategy-setup-guide"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-map-signs mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Strategy Setup Guide</span>
+                                <span
+                                    class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Guide</span>
+                            </a>
+
+                            <!-- Workflow Builder -->
+                            <a href="/workflow-builder"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-project-diagram mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Workflow Builder</span>
+                                <span class="ml-auto bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">n8n
+                                    Style</span>
+                            </a>
+
+
+
+                            <!-- Symbol Strategy Config -->
+                            <a href="/symbol-strategy-config"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-cogs mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Symbol Strategy Config</span>
+                            </a>
+
+                            <!-- Data Sources -->
+                            <a href="/data-sources"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-database mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Data Sources</span>
+                            </a>
+
+                            <!-- Performance -->
+                            <a href="/performance-analytics"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-chart-line mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Performance</span>
+                            </a>
+
+                            <!-- Notifications -->
+                            <a href="/notification-management"
+                                class="flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                                <i class="fas fa-bell mr-2 text-gray-400 group-hover:text-blue-600"></i>
+                                <span class="font-medium">Notifications</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div x-data="{ sidebarOpen: window.innerWidth >= 768 }" :class="sidebarOpen ? 'pl-64' : 'pl-0'"
+            class="transition-all duration-300">
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm border-b border-gray-200">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div class="flex items-center">
+                        <button @click="sidebarOpen = !sidebarOpen"
+                            class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fas fa-bars text-lg"></i>
+                        </button>
+                        <h2 class="ml-4 text-2xl font-semibold text-gray-800">{% block page_title %}Dashboard{% endblock
+                            %}</h2>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                        <!-- System Status -->
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="text-sm text-gray-600">System Online</span>
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="relative">
+                            <button
+                                class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors">
+                                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-white text-sm"></i>
+                                </div>
+                                <span class="text-sm font-medium">Admin</span>
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Global notification function
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+
+            // Set colors based on type
+            const colors = {
+                'success': 'bg-green-500 text-white',
+                'error': 'bg-red-500 text-white',
+                'warning': 'bg-yellow-500 text-white',
+                'info': 'bg-blue-500 text-white'
+            };
+
+            notification.className += ` ${colors[type] || colors.info}`;
+
+            // Set content
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation' : 'info'}-circle mr-2"></i>
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+            // Add to page
+            document.body.appendChild(notification);
+
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Global toast function (alias for showNotification)
+        function showToast(message, type = 'info') {
+            showNotification(message, type);
+        }
+
+        // Global time formatting functions
+        function getTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            if (diffInSeconds < 60) {
+                return `${diffInSeconds} seconds ago`;
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            } else if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                const days = Math.floor(diffInSeconds / 86400);
+                return `${days} day${days > 1 ? 's' : ''} ago`;
+            }
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString();
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        // Active menu highlighting
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('nav a');
+
+            navLinks.forEach(link => {
+                const linkPath = link.getAttribute('href');
+
+                // Remove existing active classes
+                link.classList.remove('bg-blue-100', 'text-blue-700', 'border-r-2', 'border-blue-600');
+                link.classList.add('text-gray-700');
+
+                // Check if current path matches link path
+                if (linkPath === currentPath ||
+                    (currentPath.startsWith(linkPath) && linkPath !== '/')) {
+                    // Add active classes
+                    link.classList.remove('text-gray-700', 'hover:bg-blue-50', 'hover:text-blue-700');
+                    link.classList.add('bg-blue-100', 'text-blue-700', 'border-r-2', 'border-blue-600');
+
+                    // Also update icon color
+                    const icon = link.querySelector('i');
+                    if (icon) {
+                        icon.classList.remove('text-gray-400', 'group-hover:text-blue-600');
+                        icon.classList.add('text-blue-600');
+                    }
+                }
+            });
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+
+</html>

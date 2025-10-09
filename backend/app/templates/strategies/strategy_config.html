@@ -1,0 +1,1119 @@
+{% extends "layouts/base.html" %} {% block content %}
+<div class="container mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Strategy Configuration</h1>
+    <p class="text-gray-600">Configure strategy zones, MACD parameters, and manage strategies</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="mb-6">
+    <div class="border-b border-gray-200">
+      <nav class="-mb-px flex space-x-8">
+        <button onclick="showTab('strategies')" id="tab-strategies"
+          class="tab-button py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+          Strategies
+        </button>
+        <button onclick="showTab('zones')" id="tab-zones"
+          class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          Zone Configuration
+        </button>
+        <button onclick="showTab('macd')" id="tab-macd"
+          class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          MACD Parameters
+        </button>
+        <button onclick="showTab('notifications')" id="tab-notifications"
+          class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+          Notifications
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Strategies Tab -->
+  <div id="content-strategies" class="tab-content">
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Active Strategies</h2>
+        <button onclick="showAddStrategyModal()"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Add Strategy
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full table-auto">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Started</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="strategies-table-body" class="bg-white divide-y divide-gray-200">
+            <!-- Strategies will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone Configuration Tab -->
+  <div id="content-zones" class="tab-content hidden">
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-lg font-semibold text-gray-800">Zone Configuration</h2>
+        <div class="flex space-x-3">
+          <select id="zone-strategy-select" class="border border-gray-300 rounded-md px-3 py-2 min-w-48">
+            <option value="">Select Strategy</option>
+          </select>
+          <button onclick="loadZoneConfiguration()"
+            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            Load
+          </button>
+          <button onclick="applyDefaultZones()"
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Apply Defaults
+          </button>
+        </div>
+      </div>
+
+      <div id="zone-configuration" class="hidden">
+        <!-- Strategy Info -->
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 class="text-md font-semibold text-gray-700 mb-2" id="strategy-info">Strategy: Loading...</h3>
+          <p class="text-sm text-gray-600">Configure zone thresholds for all timeframes at once</p>
+        </div>
+
+        <!-- Indicator Selection -->
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+          <h3 class="text-md font-semibold text-gray-700 mb-3">Select Indicator to Configure</h3>
+          <div class="flex space-x-4">
+            <button id="indicator-fmacd" onclick="selectIndicator('fmacd')"
+              class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors">
+              📈 FMACD (Fast MACD)
+            </button>
+            <button id="indicator-smacd" onclick="selectIndicator('smacd')"
+              class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+              📊 SMACD (Slow MACD)
+            </button>
+            <button id="indicator-bars" onclick="selectIndicator('bars')"
+              class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+              🌪️ BARS (Market Sentiment)
+            </button>
+          </div>
+          <p class="text-sm text-gray-600 mt-2" id="indicator-description">
+            Currently configuring: <strong>FMACD (Fast MACD)</strong> - Fast moving average convergence divergence
+            indicator
+          </p>
+        </div>
+
+        <!-- All Timeframes Configuration -->
+        <div id="timeframes-grid" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <!-- Timeframes will be generated here -->
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex justify-between items-center">
+          <div class="flex space-x-2">
+            <button onclick="copyToAllTimeframes()"
+              class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm">
+              Copy to All
+            </button>
+            <button onclick="resetAllZones()"
+              class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm">
+              Reset All
+            </button>
+          </div>
+          <div class="flex space-x-2">
+            <button onclick="saveZoneConfiguration()"
+              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+              Save Changes
+            </button>
+            <button onclick="loadZoneConfiguration()"
+              class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+              Reload
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MACD Parameters Tab -->
+  <div id="content-macd" class="tab-content hidden">
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">MACD Parameters</h2>
+        <button onclick="showAddMacdModal()"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+          Add Symbol
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full table-auto">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fast Period
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Slow Period
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal Period
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="macd-table-body" class="bg-white divide-y divide-gray-200">
+            <!-- MACD parameters will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Tab -->
+  <div id="content-notifications" class="tab-content hidden">
+    <div class="bg-white shadow-md rounded-lg p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Notification History</h2>
+        <div class="flex space-x-2">
+          <select id="notification-strategy-select" class="border border-gray-300 rounded-md px-3 py-2">
+            <option value="">All Strategies</option>
+          </select>
+          <button onclick="loadNotifications()"
+            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full table-auto">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strategy</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+            </tr>
+          </thead>
+          <tbody id="notifications-table-body" class="bg-white divide-y divide-gray-200">
+            <!-- Notifications will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Strategy Modal -->
+<div id="add-strategy-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Add New Strategy</h3>
+      <form id="add-strategy-form">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+          <input type="text" id="strategy-symbol" class="w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="Enter symbol" required>
+          <div id="symbol-suggestions"
+            class="mt-1 border border-gray-300 rounded-md bg-white max-h-40 overflow-y-auto hidden"></div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Market</label>
+          <select id="strategy-market" class="w-full border border-gray-300 rounded-md px-3 py-2" required>
+            <option value="">Select Market</option>
+            <option value="us">US Market</option>
+            <option value="vn">Vietnam Market</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Strategy Name</label>
+          <input type="text" id="strategy-name" class="w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="Enter strategy name" required>
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" onclick="hideAddStrategyModal()"
+            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+            Cancel
+          </button>
+          <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Add Strategy
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add MACD Modal -->
+<div id="add-macd-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+  <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <h3 class="text-lg font-medium text-gray-900 mb-4">Add MACD Parameters</h3>
+      <form id="add-macd-form">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+          <input type="text" id="macd-symbol" class="w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="Enter symbol" required>
+          <div id="macd-symbol-suggestions"
+            class="mt-1 border border-gray-300 rounded-md bg-white max-h-40 overflow-y-auto hidden"></div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Market</label>
+          <select id="macd-market" class="w-full border border-gray-300 rounded-md px-3 py-2" required>
+            <option value="">Select Market</option>
+            <option value="us">US Market</option>
+            <option value="vn">Vietnam Market</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Fast Period</label>
+          <input type="number" id="macd-fast" class="w-full border border-gray-300 rounded-md px-3 py-2" value="12"
+            min="1" max="50" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Slow Period</label>
+          <input type="number" id="macd-slow" class="w-full border border-gray-300 rounded-md px-3 py-2" value="26"
+            min="1" max="100" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Signal Period</label>
+          <input type="number" id="macd-signal" class="w-full border border-gray-300 rounded-md px-3 py-2" value="9"
+            min="1" max="500" required>
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" onclick="hideAddMacdModal()"
+            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+            Cancel
+          </button>
+          <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Add Parameters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Global variables
+  let currentStrategyId = null;
+  let currentTimeframe = '4h';
+  let currentIndicator = 'fmacd'; // Default to FMACD
+  let zoneData = {};
+
+  // Tab management
+  function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.add('hidden');
+    });
+
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.classList.remove('border-blue-500', 'text-blue-600');
+      button.classList.add('border-transparent', 'text-gray-500');
+    });
+
+    // Show selected tab content
+    document.getElementById(`content-${tabName}`).classList.remove('hidden');
+
+    // Add active class to selected tab
+    document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
+    document.getElementById(`tab-${tabName}`).classList.add('border-blue-500', 'text-blue-600');
+
+    // Load data for the tab
+    if (tabName === 'strategies') {
+      loadStrategies();
+    } else if (tabName === 'macd') {
+      loadMacdParameters();
+    } else if (tabName === 'notifications') {
+      loadNotifications();
+    }
+  }
+
+  // Strategy management
+  function loadStrategies() {
+    fetch('/api/strategies')
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.getElementById('strategies-table-body');
+        tbody.innerHTML = '';
+
+        // Populate strategy select for zone configuration
+        const strategySelect = document.getElementById('zone-strategy-select');
+        strategySelect.innerHTML = '<option value="">Select Strategy</option>';
+
+        data.strategies.forEach(strategy => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${strategy.symbol}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${strategy.market.toUpperCase()}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${strategy.name}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${strategy.status === 'running' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+              ${strategy.status.toUpperCase()}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${strategy.started_at ? new Date(strategy.started_at).toLocaleString() : '-'}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button onclick="startStrategy(${strategy.id})" class="text-green-600 hover:text-green-900 mr-2">Start</button>
+            <button onclick="stopStrategy(${strategy.id})" class="text-red-600 hover:text-red-900 mr-2">Stop</button>
+            <button onclick="editStrategy(${strategy.id})" class="text-blue-600 hover:text-blue-900">Edit</button>
+          </td>
+        `;
+          tbody.appendChild(row);
+
+          // Add to strategy select
+          const option = document.createElement('option');
+          option.value = strategy.id;
+          option.textContent = `${strategy.symbol} (${strategy.market.toUpperCase()}) - ${strategy.name}`;
+          strategySelect.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading strategies:', error);
+      });
+  }
+
+  // Indicator selection
+  function selectIndicator(indicator) {
+    currentIndicator = indicator;
+
+    // Update button styles
+    document.querySelectorAll('[id^="indicator-"]').forEach(btn => {
+      btn.classList.remove('bg-green-500', 'text-white', 'bg-blue-500', 'bg-purple-500');
+      btn.classList.add('bg-gray-300', 'text-gray-700');
+    });
+
+    const activeButton = document.getElementById(`indicator-${indicator}`);
+    if (activeButton) {
+      activeButton.classList.remove('bg-gray-300', 'text-gray-700');
+
+      if (indicator === 'fmacd') {
+        activeButton.classList.add('bg-green-500', 'text-white');
+      } else if (indicator === 'smacd') {
+        activeButton.classList.add('bg-blue-500', 'text-white');
+      } else if (indicator === 'bars') {
+        activeButton.classList.add('bg-purple-500', 'text-white');
+      }
+    }
+
+    // Update description
+    const descriptions = {
+      'fmacd': 'Currently configuring: <strong>FMACD (Fast MACD)</strong> - Fast moving average convergence divergence indicator',
+      'smacd': 'Currently configuring: <strong>SMACD (Slow MACD)</strong> - Slow moving average convergence divergence indicator',
+      'bars': 'Currently configuring: <strong>BARS (Market Sentiment)</strong> - Barometer of market sentiment with 5 zones: Hurricane, Storm, StrongWind, Windy, Neutral'
+    };
+
+    document.getElementById('indicator-description').innerHTML = descriptions[indicator];
+
+    // Regenerate the grid with new indicator
+    if (currentStrategyId) {
+      generateTimeframesGrid();
+    }
+  }
+
+  // Zone configuration
+  function loadZoneConfiguration() {
+    const strategyId = document.getElementById('zone-strategy-select').value;
+    if (!strategyId) {
+      alert('Please select a strategy');
+      return;
+    }
+
+    currentStrategyId = strategyId;
+
+    // Update strategy info
+    const strategySelect = document.getElementById('zone-strategy-select');
+    const selectedOption = strategySelect.options[strategySelect.selectedIndex];
+    const strategyText = selectedOption.text;
+    document.getElementById('strategy-info').textContent = `Strategy: ${strategyText}`;
+
+    fetch(`/api/strategies/${strategyId}/zones`)
+      .then(response => response.json())
+      .then(data => {
+        zoneData = data.zones;
+        generateTimeframesGrid();
+        document.getElementById('zone-configuration').classList.remove('hidden');
+      })
+      .catch(error => {
+        console.error('Error loading zone configuration:', error);
+        // If no zones found, show default zones
+        generateTimeframesGrid();
+        document.getElementById('zone-configuration').classList.remove('hidden');
+      });
+  }
+
+  function generateTimeframesGrid() {
+    const timeframes = [
+      { name: '1m', label: '1 Minute', color: 'blue' },
+      { name: '2m', label: '2 Minutes', color: 'green' },
+      { name: '5m', label: '5 Minutes', color: 'yellow' },
+      { name: '15m', label: '15 Minutes', color: 'purple' },
+      { name: '30m', label: '30 Minutes', color: 'indigo' },
+      { name: '1h', label: '1 Hour', color: 'red' },
+      { name: '4h', label: '4 Hours', color: 'pink' }
+    ];
+
+    const container = document.getElementById('timeframes-grid');
+    container.innerHTML = '';
+
+    timeframes.forEach(tf => {
+      const timeframeDiv = document.createElement('div');
+      timeframeDiv.className = 'bg-gray-50 rounded-lg p-4';
+
+      const colorClasses = {
+        blue: 'bg-blue-100 text-blue-600',
+        green: 'bg-green-100 text-green-600',
+        yellow: 'bg-yellow-100 text-yellow-600',
+        purple: 'bg-purple-100 text-purple-600',
+        indigo: 'bg-indigo-100 text-indigo-600',
+        red: 'bg-red-100 text-red-600',
+        pink: 'bg-pink-100 text-pink-600'
+      };
+
+      timeframeDiv.innerHTML = `
+        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+          <span class="w-8 h-8 ${colorClasses[tf.color]} rounded-full flex items-center justify-center text-xs font-bold mr-2">${tf.name}</span>
+          ${tf.label}
+        </h4>
+        <div class="space-y-2">
+          ${generateZoneInputs(tf.name)}
+        </div>
+      `;
+
+      container.appendChild(timeframeDiv);
+    });
+  }
+
+  function generateZoneInputs(timeframe) {
+    // Different zones for different indicators
+    const zones = currentIndicator === 'bars'
+      ? ['Hurricane', 'Storm', 'StrongWind', 'Windy', 'Neutral']
+      : ['IGR', 'Greed', 'Bull', 'Pos', 'Neutral', 'Neg', 'Bear', 'Fear', 'Panic'];
+
+    // Default values for different indicators (updated according to the provided table)
+    const defaultValues = {
+      'fmacd': {
+        '1m': [0.47, 0.33, 0.22, 0.17, 0.07, 0.0, -0.17, -0.33, -0.47],
+        '2m': [0.74, 0.33, 0.33, 0.22, 0.11, 0.0, -0.22, -0.47, -0.74],
+        '5m': [1.0, 0.74, 0.47, 0.33, 0.17, 0.0, -0.33, -0.74, -1.0],
+        '15m': [1.14, 0.74, 0.74, 0.47, 0.22, 0.0, -0.47, -0.74, -1.47],
+        '30m': [1.74, 1.47, 1.0, 0.74, 0.47, 0.0, -0.74, -1.47, -2.2],
+        '1h': [1.74, 1.47, 1.0, 0.74, 0.47, 0.0, -0.74, -1.47, -2.2],
+        '4h': [3.0, 2.2, 1.47, 1.0, 0.47, 0.0, -0.74, -1.47, -3.0]
+      },
+      'smacd': {
+        '1m': [0.33, 0.22, 0.17, 0.11, 0.07, 0.0, -0.11, -0.22, -0.33],
+        '2m': [0.47, 0.33, 0.22, 0.17, 0.11, 0.0, -0.17, -0.33, -0.47],
+        '5m': [0.74, 0.47, 0.33, 0.22, 0.17, 0.0, -0.22, -0.47, -0.74],
+        '15m': [0.74, 0.47, 0.47, 0.33, 0.22, 0.0, -0.33, -0.47, -0.74],
+        '30m': [1.0, 0.74, 0.74, 0.47, 0.33, 0.0, -0.47, -1.0, -1.47],
+        '1h': [1.0, 0.74, 0.74, 0.47, 0.33, 0.0, -0.47, -1.0, -1.47],
+        '4h': [2.2, 1.47, 1.0, 0.74, 0.47, 0.0, -0.74, -1.47, -2.2]
+      },
+      'bars': {
+        '1m': [0.37, 0.33, 0.22, 0.11, 0.07],
+        '2m': [0.47, 0.33, 0.33, 0.22, 0.11],
+        '5m': [0.74, 0.47, 0.47, 0.33, 0.17],
+        '15m': [1.0, 0.74, 0.47, 0.33, 0.22],
+        '30m': [1.47, 1.14, 1.0, 0.74, 0.47],
+        '1h': [2.0, 1.74, 1.0, 0.74, 0.47],
+        '4h': [3.0, 2.0, 1.74, 1.47, 1.0]
+      }
+    };
+
+    // Default conditions based on zone position and indicator (updated according to the provided table)
+    const defaultConditions = currentIndicator === 'bars'
+      ? {
+        'Hurricane': '>=',    // BARS Hurricane: >=
+        'Storm': '>=',        // BARS Storm: >=
+        'StrongWind': '>=',   // BARS StrongWind: >=
+        'Windy': '>=',        // BARS Windy: >=
+        'Neutral': '>='       // BARS Neutral: >=
+      }
+      : {
+        'IGR': '>=',     // Above Neutral: >=
+        'Greed': '>=',   // Above Neutral: >=
+        'Bull': '>=',    // Above Neutral: >=
+        'Pos': '>=',     // Above Neutral: >=
+        'Neutral': '>=', // Neutral: >=
+        'Neg': '<',      // Below Neutral: <
+        'Bear': '<',     // Below Neutral: <
+        'Fear': '<',     // Below Neutral: <
+        'Panic': '<'     // Below Neutral: <
+      };
+
+    let html = '';
+    zones.forEach((zone, index) => {
+      // Get value based on current indicator
+      const value = zoneData && zoneData[timeframe] && zoneData[timeframe][zone]
+        ? zoneData[timeframe][zone][`${currentIndicator}_threshold`]
+        : defaultValues[currentIndicator][timeframe][index];
+
+      // Get condition based on current indicator
+      const condition = zoneData && zoneData[timeframe] && zoneData[timeframe][zone]
+        ? zoneData[timeframe][zone][`${currentIndicator}_condition`] || defaultConditions[zone]
+        : defaultConditions[zone];
+
+      // Color coding for conditions
+      const conditionColor = condition === '>' ? 'text-green-600' :
+        condition === '<' ? 'text-red-600' :
+          condition === '>=' ? 'text-emerald-600' :
+            condition === '<=' ? 'text-orange-600' :
+              condition === '<>' ? 'text-blue-600' : 'text-gray-600';
+
+      // Indicator-specific styling
+      const indicatorColor = currentIndicator === 'fmacd' ? 'border-green-300' :
+        currentIndicator === 'smacd' ? 'border-blue-300' :
+          currentIndicator === 'bars' ? 'border-purple-300' : 'border-gray-300';
+
+      html += `
+        <div class="grid grid-cols-3 gap-1">
+          <label class="text-xs text-gray-600">${zone}</label>
+          <select class="zone-condition text-xs px-1 py-1 border rounded ${conditionColor} ${indicatorColor}" 
+                  data-timeframe="${timeframe}" data-zone="${zone}" data-type="${currentIndicator}">
+            <option value=">" ${condition === '>' ? 'selected' : ''}>></option>
+            <option value="<" ${condition === '<' ? 'selected' : ''}><</option>
+            <option value=">=" ${condition === '>=' ? 'selected' : ''}>>=</option>
+            <option value="<=" ${condition === '<=' ? 'selected' : ''}><=</option>
+            <option value="<>" ${condition === '<>' ? 'selected' : ''}><></option>
+            <option value="=" ${condition === '=' ? 'selected' : ''}>=</option>
+          </select>
+          <input type="number" step="0.01" class="zone-input text-xs px-2 py-1 border rounded ${indicatorColor}" 
+                 data-timeframe="${timeframe}" data-zone="${zone}" data-type="${currentIndicator}" value="${value}">
+        </div>
+      `;
+    });
+    return html;
+  }
+
+
+  function saveZoneConfiguration() {
+    if (!currentStrategyId) {
+      alert('No strategy selected');
+      return;
+    }
+
+    // Collect all zone data from inputs and conditions
+    const inputs = document.querySelectorAll('.zone-input');
+    const conditions = document.querySelectorAll('.zone-condition');
+    const zones = {};
+
+    inputs.forEach(input => {
+      const timeframe = input.dataset.timeframe;
+      const zone = input.dataset.zone;
+      const type = input.dataset.type;
+      const value = parseFloat(input.value);
+
+      if (!zones[timeframe]) {
+        zones[timeframe] = {};
+      }
+      if (!zones[timeframe][zone]) {
+        zones[timeframe][zone] = {};
+      }
+      zones[timeframe][zone][`${type}_threshold`] = value;
+    });
+
+    conditions.forEach(condition => {
+      const timeframe = condition.dataset.timeframe;
+      const zone = condition.dataset.zone;
+      const type = condition.dataset.type;
+      const value = condition.value;
+
+      if (!zones[timeframe]) {
+        zones[timeframe] = {};
+      }
+      if (!zones[timeframe][zone]) {
+        zones[timeframe][zone] = {};
+      }
+      zones[timeframe][zone][`${type}_condition`] = value;
+    });
+
+    fetch(`/api/strategies/${currentStrategyId}/zones`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ zones: zones })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Zone configuration saved successfully');
+          zoneData = zones; // Update local data
+        } else {
+          alert('Error saving zone configuration: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error saving zone configuration:', error);
+        alert('Error saving zone configuration');
+      });
+  }
+
+  function applyDefaultZones() {
+    if (!currentStrategyId) {
+      alert('Please select a strategy first');
+      return;
+    }
+
+    const indicatorNames = {
+      'fmacd': 'FMACD (Fast MACD)',
+      'smacd': 'SMACD (Slow MACD)',
+      'bars': 'BARS (Market Sentiment)'
+    };
+
+    const conditionLogic = currentIndicator === 'bars'
+      ? 'All BARS zones (Hurricane, Storm, StrongWind, Windy, Neutral): >='
+      : 'Above Neutral (IGR, Greed, Bull, Pos, Neutral): >=\nBelow Neutral (Neg, Bear, Fear, Panic): <';
+
+    if (confirm(`Apply default ${indicatorNames[currentIndicator]} zone values and conditions to all timeframes?\n\n${conditionLogic}`)) {
+      generateTimeframesGrid();
+      alert(`Default ${indicatorNames[currentIndicator]} zones and conditions applied successfully`);
+    }
+  }
+
+  function copyToAllTimeframes() {
+    const sourceTimeframe = prompt('Enter source timeframe (1m, 2m, 5m, 15m, 30m, 1h, 4h):');
+    if (!sourceTimeframe) return;
+
+    const sourceInputs = document.querySelectorAll(`[data-timeframe="${sourceTimeframe}"]`);
+    if (sourceInputs.length === 0) {
+      alert('Source timeframe not found');
+      return;
+    }
+
+    const indicatorNames = {
+      'fmacd': 'FMACD',
+      'smacd': 'SMACD',
+      'bars': 'BARS'
+    };
+
+    if (confirm(`Copy ${indicatorNames[currentIndicator]} values and conditions from ${sourceTimeframe} to all other timeframes?`)) {
+      const timeframes = ['1m', '2m', '5m', '15m', '30m', '1h', '4h'];
+
+      timeframes.forEach(tf => {
+        if (tf !== sourceTimeframe) {
+          // Copy inputs
+          const targetInputs = document.querySelectorAll(`[data-timeframe="${tf}"]`);
+          sourceInputs.forEach((sourceInput, index) => {
+            if (targetInputs[index]) {
+              targetInputs[index].value = sourceInput.value;
+            }
+          });
+
+          // Copy conditions
+          const sourceConditions = document.querySelectorAll(`[data-timeframe="${sourceTimeframe}"].zone-condition`);
+          const targetConditions = document.querySelectorAll(`[data-timeframe="${tf}"].zone-condition`);
+          sourceConditions.forEach((sourceCondition, index) => {
+            if (targetConditions[index]) {
+              targetConditions[index].value = sourceCondition.value;
+            }
+          });
+        }
+      });
+
+      alert(`${indicatorNames[currentIndicator]} values and conditions copied successfully`);
+    }
+  }
+
+  function resetAllZones() {
+    const indicatorNames = {
+      'fmacd': 'FMACD (Fast MACD)',
+      'smacd': 'SMACD (Slow MACD)',
+      'bars': 'BARS (Market Sentiment)'
+    };
+
+    if (confirm(`Reset all ${indicatorNames[currentIndicator]} zones to default values?`)) {
+      generateTimeframesGrid();
+      alert(`All ${indicatorNames[currentIndicator]} zones reset to defaults`);
+    }
+  }
+
+  // MACD parameters
+  function loadMacdParameters() {
+    fetch('/api/macd-parameters')
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.getElementById('macd-table-body');
+        tbody.innerHTML = '';
+
+        data.parameters.forEach(param => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${param.symbol}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${param.market.toUpperCase()}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${param.fast_period}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${param.slow_period}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${param.signal_period}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <button onclick="editMacdParameters(${param.id})" class="text-blue-600 hover:text-blue-900 mr-2">Edit</button>
+            <button onclick="deleteMacdParameters(${param.id})" class="text-red-600 hover:text-red-900">Delete</button>
+          </td>
+        `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading MACD parameters:', error);
+      });
+  }
+
+  // Notifications
+  function loadNotifications() {
+    const strategyId = document.getElementById('notification-strategy-select').value;
+    let url = '/api/notifications';
+    if (strategyId) {
+      url += `?strategy_id=${strategyId}`;
+    }
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        const tbody = document.getElementById('notifications-table-body');
+        tbody.innerHTML = '';
+
+        data.notifications.forEach(notification => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(notification.sent_at).toLocaleString()}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${notification.strategy_symbol}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${notification.notification_type}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${notification.signal_type || '-'}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${notification.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+              ${notification.success ? 'SUCCESS' : 'FAILED'}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">${notification.message}</td>
+        `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(error => {
+        console.error('Error loading notifications:', error);
+      });
+  }
+
+  // Modal functions
+  function showAddStrategyModal() {
+    document.getElementById('add-strategy-modal').classList.remove('hidden');
+    loadSymbolSuggestions('strategy-symbol', 'symbol-suggestions');
+  }
+
+  function hideAddStrategyModal() {
+    document.getElementById('add-strategy-modal').classList.add('hidden');
+  }
+
+  function showAddMacdModal() {
+    document.getElementById('add-macd-modal').classList.remove('hidden');
+    loadSymbolSuggestions('macd-symbol', 'macd-symbol-suggestions');
+  }
+
+  function hideAddMacdModal() {
+    document.getElementById('add-macd-modal').classList.add('hidden');
+  }
+
+  // Symbol autocomplete
+  function loadSymbolSuggestions(inputId, suggestionsId) {
+    const input = document.getElementById(inputId);
+    const suggestions = document.getElementById(suggestionsId);
+
+    input.addEventListener('input', function () {
+      const query = this.value;
+      if (query.length < 2) {
+        suggestions.classList.add('hidden');
+        return;
+      }
+
+      fetch(`/api/symbols/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          suggestions.innerHTML = '';
+          data.symbols.forEach(symbol => {
+            const div = document.createElement('div');
+            div.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer';
+            div.textContent = `${symbol.symbol} - ${symbol.name}`;
+            div.onclick = () => {
+              input.value = symbol.symbol;
+              suggestions.classList.add('hidden');
+            };
+            suggestions.appendChild(div);
+          });
+          suggestions.classList.remove('hidden');
+        })
+        .catch(error => {
+          console.error('Error loading symbol suggestions:', error);
+        });
+    });
+  }
+
+  // Form submissions
+  document.getElementById('add-strategy-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const formData = {
+      symbol: document.getElementById('strategy-symbol').value,
+      market: document.getElementById('strategy-market').value,
+      name: document.getElementById('strategy-name').value
+    };
+
+    const strategyId = this.dataset.strategyId;
+    const isEdit = !!strategyId;
+
+    const url = isEdit ? `/api/strategies/${strategyId}` : '/api/strategies';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          hideAddStrategyModal();
+          loadStrategies();
+          alert(isEdit ? 'Strategy updated successfully' : 'Strategy added successfully');
+
+          // Reset form
+          this.reset();
+          delete this.dataset.strategyId;
+          document.querySelector('#add-strategy-modal h3').textContent = 'Add New Strategy';
+          document.querySelector('#add-strategy-form button[type="submit"]').textContent = 'Add Strategy';
+        } else {
+          alert(`Error ${isEdit ? 'updating' : 'adding'} strategy: ` + data.message);
+        }
+      })
+      .catch(error => {
+        console.error(`Error ${isEdit ? 'updating' : 'adding'} strategy:`, error);
+        alert(`Error ${isEdit ? 'updating' : 'adding'} strategy`);
+      });
+  });
+
+  document.getElementById('add-macd-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const formData = {
+      symbol: document.getElementById('macd-symbol').value,
+      market: document.getElementById('macd-market').value,
+      fast_period: parseInt(document.getElementById('macd-fast').value),
+      slow_period: parseInt(document.getElementById('macd-slow').value),
+      signal_period: parseInt(document.getElementById('macd-signal').value)
+    };
+
+    const paramId = this.dataset.paramId;
+    const isEdit = !!paramId;
+
+    const url = isEdit ? `/api/macd-parameters/${paramId}` : '/api/macd-parameters';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData)
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          hideAddMacdModal();
+          loadMacdParameters();
+          alert(isEdit ? 'MACD parameters updated successfully' : 'MACD parameters added successfully');
+
+          // Reset form
+          this.reset();
+          delete this.dataset.paramId;
+          document.querySelector('#add-macd-modal h3').textContent = 'Add MACD Parameters';
+          document.querySelector('#add-macd-form button[type="submit"]').textContent = 'Add Parameters';
+        } else {
+          alert(`Error ${isEdit ? 'updating' : 'adding'} MACD parameters: ` + data.message);
+        }
+      })
+      .catch(error => {
+        console.error(`Error ${isEdit ? 'updating' : 'adding'} MACD parameters:`, error);
+        alert(`Error ${isEdit ? 'updating' : 'adding'} MACD parameters`);
+      });
+  });
+
+  // Strategy management functions
+  function startStrategy(strategyId) {
+    if (confirm('Are you sure you want to start this strategy?')) {
+      fetch(`/api/strategies/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ strategy_id: strategyId })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Strategy started successfully');
+            loadStrategies();
+          } else {
+            alert('Error starting strategy: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error starting strategy:', error);
+          alert('Error starting strategy');
+        });
+    }
+  }
+
+  function stopStrategy(strategyId) {
+    if (confirm('Are you sure you want to stop this strategy?')) {
+      fetch(`/api/strategies/stop`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ strategy_id: strategyId })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Strategy stopped successfully');
+            loadStrategies();
+          } else {
+            alert('Error stopping strategy: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error stopping strategy:', error);
+          alert('Error stopping strategy');
+        });
+    }
+  }
+
+  function editStrategy(strategyId) {
+    // Get strategy data
+    fetch('/api/strategies')
+      .then(response => response.json())
+      .then(data => {
+        const strategy = data.strategies.find(s => s.id === strategyId);
+        if (strategy) {
+          // Fill form with existing data
+          document.getElementById('strategy-symbol').value = strategy.symbol;
+          document.getElementById('strategy-market').value = strategy.market;
+          document.getElementById('strategy-name').value = strategy.name;
+
+          // Show modal
+          document.getElementById('add-strategy-modal').classList.remove('hidden');
+
+          // Change form title and button
+          document.querySelector('#add-strategy-modal h3').textContent = 'Edit Strategy';
+          document.querySelector('#add-strategy-form button[type="submit"]').textContent = 'Update Strategy';
+
+          // Store strategy ID for update
+          document.getElementById('add-strategy-form').dataset.strategyId = strategyId;
+        }
+      })
+      .catch(error => {
+        console.error('Error loading strategy:', error);
+        alert('Error loading strategy data');
+      });
+  }
+
+  function editMacdParameters(paramId) {
+    // Get MACD parameter data
+    fetch('/api/macd-parameters')
+      .then(response => response.json())
+      .then(data => {
+        const param = data.parameters.find(p => p.id === paramId);
+        if (param) {
+          // Fill form with existing data
+          document.getElementById('macd-symbol').value = param.symbol;
+          document.getElementById('macd-market').value = param.market;
+          document.getElementById('macd-fast').value = param.fast_period;
+          document.getElementById('macd-slow').value = param.slow_period;
+          document.getElementById('macd-signal').value = param.signal_period;
+
+          // Show modal
+          document.getElementById('add-macd-modal').classList.remove('hidden');
+
+          // Change form title and button
+          document.querySelector('#add-macd-modal h3').textContent = 'Edit MACD Parameters';
+          document.querySelector('#add-macd-form button[type="submit"]').textContent = 'Update Parameters';
+
+          // Store parameter ID for update
+          document.getElementById('add-macd-form').dataset.paramId = paramId;
+        }
+      })
+      .catch(error => {
+        console.error('Error loading MACD parameters:', error);
+        alert('Error loading MACD parameter data');
+      });
+  }
+
+  function deleteMacdParameters(paramId) {
+    if (confirm('Are you sure you want to delete these MACD parameters?')) {
+      fetch(`/api/macd-parameters/${paramId}`, {
+        method: 'DELETE'
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('MACD parameters deleted successfully');
+            loadMacdParameters();
+          } else {
+            alert('Error deleting MACD parameters: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error deleting MACD parameters:', error);
+          alert('Error deleting MACD parameters');
+        });
+    }
+  }
+
+  function resetZoneConfiguration() {
+    if (confirm('Are you sure you want to reset zone configuration to defaults?')) {
+      // Reload zone configuration
+      loadZoneConfiguration();
+    }
+  }
+
+  // Initialize page
+  document.addEventListener('DOMContentLoaded', function () {
+    loadStrategies();
+    loadMacdParameters();
+    loadNotifications();
+
+    // Load strategy options for zone configuration
+    fetch('/api/strategies')
+      .then(response => response.json())
+      .then(data => {
+        const select = document.getElementById('zone-strategy-select');
+        const notificationSelect = document.getElementById('notification-strategy-select');
+
+        data.strategies.forEach(strategy => {
+          const option1 = document.createElement('option');
+          option1.value = strategy.id;
+          option1.textContent = `${strategy.symbol} (${strategy.market.toUpperCase()})`;
+          select.appendChild(option1);
+
+          const option2 = document.createElement('option');
+          option2.value = strategy.id;
+          option2.textContent = `${strategy.symbol} (${strategy.market.toUpperCase()})`;
+          notificationSelect.appendChild(option2);
+        });
+      });
+  });
+</script>
+{% endblock %}

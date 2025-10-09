@@ -1,0 +1,348 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-900 text-white">
+    <!-- Compact Header -->
+    <div class="bg-gray-800 border-b border-gray-600 px-4 py-2">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xs font-medium text-green-400">📊 IBoard</h1>
+
+            <div class="flex items-center space-x-3">
+                <!-- Market Status -->
+                <div class="flex items-center space-x-1">
+                    <div id="statusIndicator" class="w-2 h-2 rounded-full bg-red-500"></div>
+                    <span id="statusText" class="text-xs">Đang kiểm tra...</span>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex items-center space-x-2">
+                    <button id="refreshBtn" onclick="refreshData()"
+                        class="bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded text-xs transition-colors">
+                        🔄
+                    </button>
+
+                    <div class="flex items-center space-x-1">
+                        <input type="checkbox" id="autoRefresh" class="accent-green-500 w-3 h-3" disabled>
+                        <label for="autoRefresh" class="text-xs text-gray-500">Disabled</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-xs text-gray-400 mt-1">
+            Cập nhật: <span id="lastUpdateTime">--</span>
+        </div>
+    </div>
+
+
+    <!-- Loading Message -->
+    <div id="loadingMessage" class="text-center py-12">
+        <div class="inline-block w-6 h-6 border-2 border-gray-600 border-t-green-500 rounded-full animate-spin"></div>
+        <p class="mt-2 text-gray-400">Đang tải dữ liệu...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="hidden bg-red-900 border border-red-500 rounded-lg m-4 p-4 text-center">
+        <p class="text-red-300">❌ Lỗi khi tải dữ liệu. Vui lòng thử lại.</p>
+    </div>
+
+    <!-- IBoard Table -->
+    <div class="p-2">
+        <div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+            <table id="iboardTable" class="w-full">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Mã CK
+                        </th>
+                        <th class="px-2 py-1 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Giá
+                            hiện tại</th>
+                        <th class="px-2 py-1 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Thay
+                            đổi</th>
+                        <th class="px-2 py-1 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">%
+                            Thay đổi</th>
+                        <th class="px-2 py-1 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Khối
+                            lượng</th>
+                        <th class="px-2 py-1 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Giá
+                            cao nhất</th>
+                        <th class="px-2 py-1 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Giá
+                            thấp nhất</th>
+                        <th class="px-2 py-1 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Cập
+                            nhật</th>
+                    </tr>
+                </thead>
+                <tbody id="iboardBody" class="bg-gray-800 divide-y divide-gray-700">
+                    <!-- Data will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let autoRefreshInterval;
+    let isMarketOpen = false;
+    let lastData = {};
+
+    // Khởi tạo
+    document.addEventListener('DOMContentLoaded', function () {
+        checkMarketStatus();
+        loadInitialData();
+        setupAutoRefresh();
+    });
+
+    // Tải dữ liệu ban đầu
+    async function loadInitialData() {
+        // Kiểm tra localStorage trước
+        const cachedData = getCachedData();
+        if (cachedData) {
+            updateIboard(cachedData);
+            document.getElementById('loadingMessage').classList.add('hidden');
+        }
+
+        // Luôn tải dữ liệu mới từ API
+        try {
+            const response = await fetch('/api/iboard/data');
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const data = await response.json();
+            updateIboard(data);
+            saveToCache(data);
+            updateLastUpdateTime();
+            document.getElementById('loadingMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        } catch (error) {
+            console.error('Error loading data:', error);
+            document.getElementById('loadingMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+    }
+
+    // Cập nhật bảng IBoard
+    function updateIboard(data) {
+        const tbody = document.getElementById('iboardBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        data.stocks.forEach(stock => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-symbol', stock.symbol);
+
+            const priceClass = stock.change > 0 ? 'text-green-400' :
+                stock.change < 0 ? 'text-red-400' : 'text-white';
+            const changeClass = stock.change > 0 ? 'text-green-400' :
+                stock.change < 0 ? 'text-red-400' : 'text-white';
+
+            row.innerHTML = `
+                <td class="px-2 py-1 text-xs font-bold">
+                    <a href="/chartv2?symbol=${stock.symbol}" class="text-green-400 hover:text-green-300 underline">
+                        ${stock.symbol}
+                    </a>
+                </td>
+                <td class="px-2 py-1 text-xs text-right price ${priceClass}">${formatPrice(stock.price)}</td>
+                <td class="px-2 py-1 text-xs text-right change ${changeClass}">${formatChange(stock.change)}</td>
+                <td class="px-2 py-1 text-xs text-right change ${changeClass}">${formatPercentChange(stock.percentChange)}</td>
+                <td class="px-2 py-1 text-xs text-right volume text-white">${formatVolume(stock.volume)}</td>
+                <td class="px-2 py-1 text-xs text-right high text-white">${formatPrice(stock.high)}</td>
+                <td class="px-2 py-1 text-xs text-right low text-white">${formatPrice(stock.low)}</td>
+                <td class="px-2 py-1 text-xs text-right last-update text-gray-400">${stock.lastUpdate || 'N/A'}</td>
+            `;
+
+            tbody.appendChild(row);
+        });
+    }
+
+    // Kiểm tra trạng thái thị trường
+    function checkMarketStatus() {
+        const now = new Date();
+        const vietnamTime = new Date(now.getTime() + (7 * 60 * 60 * 1000)); // GMT+7
+        const hour = vietnamTime.getHours();
+        const minute = vietnamTime.getMinutes();
+        const time = hour * 60 + minute;
+
+        // Thị trường mở: 9:00-11:30 và 13:00-15:00 (GMT+7)
+        const morningStart = 9 * 60; // 9:00
+        const morningEnd = 11 * 60 + 30; // 11:30
+        const afternoonStart = 13 * 60; // 13:00
+        const afternoonEnd = 15 * 60; // 15:00
+
+        isMarketOpen = (time >= morningStart && time <= morningEnd) ||
+            (time >= afternoonStart && time <= afternoonEnd);
+
+        updateMarketStatus();
+    }
+
+    // Cập nhật trạng thái thị trường
+    function updateMarketStatus() {
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const iboardTable = document.getElementById('iboardTable');
+
+        if (isMarketOpen) {
+            statusIndicator.className = 'w-2 h-2 rounded-full bg-green-500';
+            statusText.textContent = 'Mở';
+            iboardTable.classList.remove('hidden');
+        } else {
+            statusIndicator.className = 'w-2 h-2 rounded-full bg-red-500';
+            statusText.textContent = 'Đóng';
+            iboardTable.classList.remove('hidden');
+        }
+    }
+
+    // Removed duplicate loadInitialData function
+
+    // Làm mới dữ liệu
+    async function refreshData() {
+        const refreshBtn = document.getElementById('refreshBtn');
+        refreshBtn.disabled = true;
+        refreshBtn.textContent = '⏳';
+
+        try {
+            const response = await fetch('/api/iboard/data');
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const data = await response.json();
+            updateIboard(data);
+            saveToCache(data);
+            updateLastUpdateTime();
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+        } finally {
+            refreshBtn.disabled = false;
+            refreshBtn.textContent = '🔄';
+        }
+    }
+
+    // localStorage functions
+    function saveToCache(data) {
+        try {
+            localStorage.setItem('iboard_data', JSON.stringify({
+                data: data,
+                timestamp: Date.now()
+            }));
+        } catch (error) {
+            console.error('Error saving to cache:', error);
+        }
+    }
+
+    function getCachedData() {
+        try {
+            const cached = localStorage.getItem('iboard_data');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                // Cache valid for 5 minutes (300000 ms) vì dữ liệu từ database có thể cập nhật thường xuyên hơn
+                if (Date.now() - parsed.timestamp < 300000) {
+                    return parsed.data;
+                }
+            }
+        } catch (error) {
+            console.error('Error reading cache:', error);
+        }
+        return null;
+    }
+
+    // Removed duplicate updateIboard function
+
+    // Cập nhật thời gian cập nhật
+    function updateLastUpdateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        document.getElementById('lastUpdateTime').textContent = timeString;
+    }
+
+    // Thiết lập tự động làm mới
+    function setupAutoRefresh() {
+        const autoRefreshCheckbox = document.getElementById('autoRefresh');
+
+        autoRefreshCheckbox.addEventListener('change', function () {
+            if (this.checked) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+
+        if (autoRefreshCheckbox.checked) {
+            startAutoRefresh();
+        }
+    }
+
+    // Bắt đầu tự động làm mới
+    function startAutoRefresh() {
+        stopAutoRefresh(); // Dừng interval cũ nếu có
+        autoRefreshInterval = setInterval(() => {
+            if (isMarketOpen) {
+                // Khi thị trường mở, chỉ refresh nếu cache hết hạn
+                const cachedData = getCachedData();
+                if (!cachedData) {
+                    refreshData();
+                } else {
+                    updateIboard(cachedData);
+                }
+            } else {
+                // Khi thị trường đóng, chỉ hiển thị cache
+                const cachedData = getCachedData();
+                if (cachedData) {
+                    updateIboard(cachedData);
+                }
+            }
+        }, 10000); // Cập nhật mỗi 10 giây (phù hợp với dữ liệu database)
+    }
+
+    // Dừng tự động làm mới
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+    }
+
+
+    // Format giá
+    function formatPrice(price) {
+        if (price === null || price === undefined) return '-';
+        return new Intl.NumberFormat('vi-VN', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }).format(price);
+    }
+
+    // Format thay đổi
+    function formatChange(change) {
+        if (change === null || change === undefined) return '-';
+        const sign = change > 0 ? '+' : '';
+        return sign + new Intl.NumberFormat('vi-VN', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }).format(change);
+    }
+
+    // Format phần trăm thay đổi
+    function formatPercentChange(percent) {
+        if (percent === null || percent === undefined) return '-';
+        const sign = percent > 0 ? '+' : '';
+        return sign + percent.toFixed(2) + '%';
+    }
+
+    // Format khối lượng
+    function formatVolume(volume) {
+        if (volume === null || volume === undefined) return '-';
+        if (volume >= 1000000) {
+            return (volume / 1000000).toFixed(1) + 'M';
+        } else if (volume >= 1000) {
+            return (volume / 1000).toFixed(1) + 'K';
+        }
+        return volume.toString();
+    }
+
+    // Kiểm tra trạng thái thị trường mỗi phút
+    setInterval(checkMarketStatus, 60000);
+
+    // VPS streaming completely disabled
+    console.log('📡 IBoard VPS streaming disabled');
+</script>
+{% endblock %}

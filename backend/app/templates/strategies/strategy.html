@@ -1,0 +1,490 @@
+{% extends "layouts/base.html" %} {% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+	<!-- Card 1: Tổng quan hệ thống -->
+	<div class="bg-white shadow-md rounded-lg p-4">
+		<div class="flex items-center border-b pb-2 mb-3">
+			<i class="fas fa-info-circle mr-2 text-blue-600"></i>
+			<h2 class="text-lg font-semibold text-gray-800">
+				Tổng quan hệ thống
+			</h2>
+		</div>
+
+		<p class="text-gray-600 mb-4">
+			Hệ thống này sử dụng ba chỉ báo chính với các vùng giá trị được định nghĩa rõ ràng cho 7 khung thời gian
+			khác nhau.
+		</p>
+
+		<!-- Legend -->
+		<div class="mb-4">
+			<div class="flex items-center mb-2">
+				<span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
+				<span class="text-gray-700">FMACD - Fast MACD (Đường MACD nhanh)</span>
+			</div>
+			<div class="flex items-center mb-2">
+				<span class="w-3 h-3 rounded-full bg-orange-500 mr-2"></span>
+				<span class="text-gray-700">SMACD - Slow MACD (Đường tín hiệu)</span>
+			</div>
+			<div class="flex items-center">
+				<span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
+				<span class="text-gray-700">BARS - Barometer of Market Sentiment</span>
+			</div>
+		</div>
+
+		<p class="text-gray-700 font-medium mb-2">
+			Hệ thống định nghĩa các vùng cảm xúc thị trường:
+		</p>
+		<ul class="list-disc list-inside text-gray-600 space-y-1">
+			<li>IgR Zone - Vùng tham lam cực độ</li>
+			<li>Greed Zone - Vùng tham lam</li>
+			<li>Bull Zone - Vùng giá lên</li>
+			<li>Pos Zone - Vùng tích cực</li>
+			<li>Neutral - Vùng trung lập</li>
+			<li>Neg Zone - Vùng tiêu cực</li>
+			<li>Bear Zone - Vùng giá xuống</li>
+			<li>Fear Zone - Vùng sợ hãi</li>
+			<li>Panic Zone - Vùng hoảng loạn</li>
+		</ul>
+	</div>
+
+	<!-- Card 2: Khung thời gian -->
+	<div class="bg-white shadow-md rounded-lg p-4">
+		<div class="flex items-center border-b pb-2 mb-3">
+			<i class="fas fa-clock mr-2 text-blue-600"></i>
+			<h2 class="text-lg font-semibold text-gray-800">
+				Khung thời gian
+			</h2>
+		</div>
+
+		<p class="text-gray-600 mb-4">
+			Hệ thống phân tích 7 khung thời gian với mục đích khác nhau:
+		</p>
+
+		<div class="overflow-x-auto">
+			<table class="table-auto w-full border border-gray-300 text-sm text-left">
+				<thead class="bg-blue-100 text-gray-800">
+					<tr>
+						<th class="border px-3 py-2">Khung thời gian</th>
+						<th class="border px-3 py-2">Mục đích</th>
+						<th class="border px-3 py-2">Trọng số</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="bg-gray-50">
+						<td class="border px-3 py-2">ID4hr (4 giờ)</td>
+						<td class="border px-3 py-2">Xu hướng dài hạn</td>
+						<td class="border px-3 py-2">40%</td>
+					</tr>
+					<tr>
+						<td class="border px-3 py-2">ID1hr (1 giờ)</td>
+						<td class="border px-3 py-2">Xu hướng dài hạn</td>
+						<td class="border px-3 py-2">40%</td>
+					</tr>
+					<tr class="bg-gray-50">
+						<td class="border px-3 py-2">ID30Min (30 phút)</td>
+						<td class="border px-3 py-2">Trung hạn</td>
+						<td class="border px-3 py-2">35%</td>
+					</tr>
+					<tr>
+						<td class="border px-3 py-2">ID15Min (15 phút)</td>
+						<td class="border px-3 py-2">Trung hạn</td>
+						<td class="border px-3 py-2">35%</td>
+					</tr>
+					<tr class="bg-gray-50">
+						<td class="border px-3 py-2">ID5Min (5 phút)</td>
+						<td class="border px-3 py-2">Ngắn hạn (dẫn dắt)</td>
+						<td class="border px-3 py-2">25%</td>
+					</tr>
+					<tr>
+						<td class="border px-3 py-2">ID2Min (2 phút)</td>
+						<td class="border px-3 py-2">Ngắn hạn</td>
+						<td class="border px-3 py-2">25%</td>
+					</tr>
+					<tr class="bg-gray-50">
+						<td class="border px-3 py-2">ID1Min (1 phút)</td>
+						<td class="border px-3 py-2">Ngắn hạn</td>
+						<td class="border px-3 py-2">25%</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+<!-- Logic Tạo Tín Hiệu -->
+<div class="bg-white shadow-md rounded-lg p-4 mb-4">
+	<div class="flex items-center border-b pb-2 mb-3">
+		<i class="fas fa-bullseye mr-2 text-green-600"></i>
+		<h2 class="text-lg font-semibold text-gray-800">
+			Logic Tạo Tín Hiệu
+		</h2>
+	</div>
+
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+		<!-- BUY Signal -->
+		<div class="bg-green-50 border border-green-200 rounded-lg p-4">
+			<h3 class="text-lg font-semibold text-green-800 mb-2">
+				🟢 BUY Signal
+			</h3>
+			<ul class="list-disc list-inside text-green-700 space-y-1">
+				<li>FMACD > 0 AND SMACD > 0</li>
+				<li>BARS in Hurricane/Storm zone</li>
+				<li>≥ 60% timeframes đồng thuận</li>
+				<li>Strength = % timeframes BUY</li>
+			</ul>
+		</div>
+
+		<!-- SELL Signal -->
+		<div class="bg-red-50 border border-red-200 rounded-lg p-4">
+			<h3 class="text-lg font-semibold text-red-800 mb-2">
+				🔴 SELL Signal
+			</h3>
+			<ul class="list-disc list-inside text-red-700 space-y-1">
+				<li>FMACD < 0 AND SMACD < 0</li>
+				<li>BARS in negative zones</li>
+				<li>≥ 60% timeframes đồng thuận</li>
+				<li>Strength = % timeframes SELL</li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<!-- Phân Tích Đa Khung Thời Gian -->
+<div class="bg-white shadow-md rounded-lg p-4 mb-4">
+	<div class="flex items-center border-b pb-2 mb-3">
+		<i class="fas fa-chart-line mr-2 text-purple-600"></i>
+		<h2 class="text-lg font-semibold text-gray-800">
+			Phân Tích Đa Khung Thời Gian
+		</h2>
+	</div>
+
+	<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		<!-- Long-term Trend -->
+		<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+			<h3 class="text-lg font-semibold text-blue-800 mb-2">
+				📈 Long-term (4h, 1h)
+			</h3>
+			<p class="text-blue-700 text-sm">
+				Xác định xu hướng chính, ảnh hưởng 40% đến quyết định cuối cùng
+			</p>
+		</div>
+
+		<!-- Medium-term Trend -->
+		<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+			<h3 class="text-lg font-semibold text-yellow-800 mb-2">
+				📊 Medium-term (30m, 15m)
+			</h3>
+			<p class="text-yellow-700 text-sm">
+				Xác định xu hướng trung hạn, ảnh hưởng 35% đến quyết định cuối cùng
+			</p>
+		</div>
+
+		<!-- Short-term Trend -->
+		<div class="bg-green-50 border border-green-200 rounded-lg p-4">
+			<h3 class="text-lg font-semibold text-green-800 mb-2">
+				⚡ Short-term (5m, 2m, 1m)
+			</h3>
+			<p class="text-green-700 text-sm">
+				Xác định điểm vào lệnh, ảnh hưởng 25% đến quyết định cuối cùng
+			</p>
+		</div>
+	</div>
+</div>
+
+<!-- Giám Sát Real-time -->
+<div class="bg-white shadow-md rounded-lg p-4 mb-4">
+	<div class="flex items-center border-b pb-2 mb-3">
+		<i class="fas fa-eye mr-2 text-cyan-600"></i>
+		<h2 class="text-lg font-semibold text-gray-800">
+			Giám Sát Real-time
+		</h2>
+	</div>
+
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+		<!-- Current Status -->
+		<div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+			<h3 class="text-md font-semibold text-gray-800 mb-2">Trạng Thái Hiện Tại</h3>
+			<div class="space-y-2">
+				<div class="flex justify-between">
+					<span class="text-gray-600">Symbol:</span>
+					<span class="font-medium" id="current-symbol">TQQQ</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-600">Market:</span>
+					<span class="font-medium" id="current-market">US</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-600">Status:</span>
+					<span class="font-medium text-green-600" id="current-status">RUNNING</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Signal Summary -->
+		<div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+			<h3 class="text-md font-semibold text-gray-800 mb-2">Tóm Tắt Tín Hiệu</h3>
+			<div class="space-y-2">
+				<div class="flex justify-between">
+					<span class="text-gray-600">BUY Timeframes:</span>
+					<span class="font-medium text-green-600" id="buy-count">5/7</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-600">SELL Timeframes:</span>
+					<span class="font-medium text-red-600" id="sell-count">1/7</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-600">Overall Signal:</span>
+					<span class="font-medium text-green-600" id="overall-signal">BUY</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-600">Strength:</span>
+					<span class="font-medium" id="signal-strength">71%</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Bảng FMACD -->
+<div class="bg-white shadow-md rounded-lg p-4 mb-4">
+	<!-- Tiêu đề -->
+	<div class="flex items-center border-b pb-2 mb-3">
+		<i class="fas fa-table mr-2 text-blue-600"></i>
+		<h2 class="text-lg font-semibold text-gray-800">
+			So sánh giá trị các vùng FMACD theo khung thời gian
+		</h2>
+	</div>
+
+	<!-- Mô tả -->
+	<p class="text-gray-600 mb-4">
+		Bảng dưới đây thể hiện ngưỡng giá trị cho các vùng của FMACD tại các khung thời gian khác nhau:
+	</p>
+
+	<!-- Bảng -->
+	<div class="overflow-x-auto">
+		<table class="table-auto w-full border border-gray-300 text-sm text-center">
+			<thead class="bg-blue-100 text-gray-800">
+				<tr>
+					<th class="border px-3 py-2">Vùng giá trị</th>
+					<th class="border px-3 py-2">1D4hr</th>
+					<th class="border px-3 py-2">1D1hr</th>
+					<th class="border px-3 py-2">1D30Min</th>
+					<th class="border px-3 py-2">1D15Min</th>
+					<th class="border px-3 py-2">1D5Min</th>
+					<th class="border px-3 py-2">1D2Min</th>
+					<th class="border px-3 py-2">1D1Min</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">IgR Zone</td>
+					<td class="border px-3 py-2">&gt; 3.0</td>
+					<td class="border px-3 py-2">&gt; 2.0</td>
+					<td class="border px-3 py-2">&gt; 1.74</td>
+					<td class="border px-3 py-2">&gt; 1.14</td>
+					<td class="border px-3 py-2">&gt; 1.0</td>
+					<td class="border px-3 py-2">&gt; 0.74</td>
+					<td class="border px-3 py-2">&gt; 0.47</td>
+				</tr>
+				<tr>
+					<td class="border px-3 py-2 font-medium">Greed Zone</td>
+					<td class="border px-3 py-2">&gt; 2.0</td>
+					<td class="border px-3 py-2">&gt; 1.74</td>
+					<td class="border px-3 py-2">&gt; 1.47</td>
+					<td class="border px-3 py-2">&gt; 1.47</td>
+					<td class="border px-3 py-2">&gt; 1.47</td>
+					<td class="border px-3 py-2">&gt; 0.47</td>
+					<td class="border px-3 py-2">&gt; 0.33</td>
+				</tr>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">Bull Zone</td>
+					<td class="border px-3 py-2">&gt; 1.74</td>
+					<td class="border px-3 py-2">&gt; 1.74</td>
+					<td class="border px-3 py-2">&gt; 1.0</td>
+					<td class="border px-3 py-2">&gt; 0.74</td>
+					<td class="border px-3 py-2">&gt; 0.74</td>
+					<td class="border px-3 py-2">&gt; 0.33</td>
+					<td class="border px-3 py-2">&gt; 0.22</td>
+				</tr>
+				<tr>
+					<td class="border px-3 py-2 font-medium">Pos Zone</td>
+					<td class="border px-3 py-2">&gt; 1.47</td>
+					<td class="border px-3 py-2">&gt; 1.0</td>
+					<td class="border px-3 py-2">&gt; 0.74</td>
+					<td class="border px-3 py-2">&gt; 0.33</td>
+					<td class="border px-3 py-2">&gt; 0.33</td>
+					<td class="border px-3 py-2">&gt; 0.22</td>
+					<td class="border px-3 py-2">&gt; 0.17</td>
+				</tr>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">Neutral</td>
+					<td class="border px-3 py-2">&lt; 0.74</td>
+					<td class="border px-3 py-2">&lt; 0.47</td>
+					<td class="border px-3 py-2">&lt; 0.33</td>
+					<td class="border px-3 py-2">&lt; 0.22</td>
+					<td class="border px-3 py-2">&lt; 0.17</td>
+					<td class="border px-3 py-2">&lt; 0.17</td>
+					<td class="border px-3 py-2">&lt; 0.07</td>
+				</tr>
+				<tr>
+					<td class="border px-3 py-2 font-medium">Neg Zone</td>
+					<td class="border px-3 py-2">&lt; 1.47</td>
+					<td class="border px-3 py-2">&lt; 1.0</td>
+					<td class="border px-3 py-2">&lt; 0.74</td>
+					<td class="border px-3 py-2">&lt; 0.47</td>
+					<td class="border px-3 py-2">&lt; 0.33</td>
+					<td class="border px-3 py-2">&lt; 0.22</td>
+					<td class="border px-3 py-2">&lt; 0.17</td>
+				</tr>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">Bear Zone</td>
+					<td class="border px-3 py-2">&lt; 1.74</td>
+					<td class="border px-3 py-2">&lt; 1.47</td>
+					<td class="border px-3 py-2">&lt; 1.0</td>
+					<td class="border px-3 py-2">&lt; 0.74</td>
+					<td class="border px-3 py-2">&lt; 0.47</td>
+					<td class="border px-3 py-2">&lt; 0.47</td>
+					<td class="border px-3 py-2">&gt; 0.22</td>
+				</tr>
+				<tr>
+					<td class="border px-3 py-2 font-medium">Fear Zone</td>
+					<td class="border px-3 py-2">&lt; 1.74</td>
+					<td class="border px-3 py-2">&lt; 1.74</td>
+					<td class="border px-3 py-2">&lt; 1.47</td>
+					<td class="border px-3 py-2">&lt; 1.0</td>
+					<td class="border px-3 py-2">&lt; 0.74</td>
+					<td class="border px-3 py-2">&lt; 0.47</td>
+					<td class="border px-3 py-2">&gt; 0.33</td>
+				</tr>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">Panic Zone</td>
+					<td class="border px-3 py-2">&lt; 3.0</td>
+					<td class="border px-3 py-2">&lt; 2.0</td>
+					<td class="border px-3 py-2">&lt; 1.74</td>
+					<td class="border px-3 py-2">&lt; 1.14</td>
+					<td class="border px-3 py-2">&lt; 1.0</td>
+					<td class="border px-3 py-2">&lt; 0.74</td>
+					<td class="border px-3 py-2">&gt; 0.47</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<!-- Bảng BARS -->
+<div class="bg-white shadow-md rounded-lg p-4 mb-4">
+	<div class="flex items-center border-b pb-2 mb-3">
+		<i class="fas fa-table mr-2 text-green-600"></i>
+		<h2 class="text-lg font-semibold text-gray-800">
+			So sánh giá trị các vùng BARS theo khung thời gian
+		</h2>
+	</div>
+
+	<p class="text-gray-600 mb-4">
+		Bảng dưới đây thể hiện ngưỡng giá trị cho các vùng của BARS tại các khung thời gian khác nhau:
+	</p>
+
+	<div class="overflow-x-auto">
+		<table class="table-auto w-full border border-gray-300 text-sm text-center">
+			<thead class="bg-green-100 text-gray-800">
+				<tr>
+					<th class="border px-3 py-2">BARS Zone</th>
+					<th class="border px-3 py-2">4h</th>
+					<th class="border px-3 py-2">1h</th>
+					<th class="border px-3 py-2">30m</th>
+					<th class="border px-3 py-2">15m</th>
+					<th class="border px-3 py-2">5m</th>
+					<th class="border px-3 py-2">2m</th>
+					<th class="border px-3 py-2">1m</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">Hurricane</td>
+					<td class="border px-3 py-2">&gt; 0.8</td>
+					<td class="border px-3 py-2">&gt; 0.7</td>
+					<td class="border px-3 py-2">&gt; 0.6</td>
+					<td class="border px-3 py-2">&gt; 0.5</td>
+					<td class="border px-3 py-2">&gt; 0.4</td>
+					<td class="border px-3 py-2">&gt; 0.3</td>
+					<td class="border px-3 py-2">&gt; 0.2</td>
+				</tr>
+				<tr>
+					<td class="border px-3 py-2 font-medium">Storm</td>
+					<td class="border px-3 py-2">&gt; 0.6</td>
+					<td class="border px-3 py-2">&gt; 0.5</td>
+					<td class="border px-3 py-2">&gt; 0.4</td>
+					<td class="border px-3 py-2">&gt; 0.3</td>
+					<td class="border px-3 py-2">&gt; 0.2</td>
+					<td class="border px-3 py-2">&gt; 0.15</td>
+					<td class="border px-3 py-2">&gt; 0.1</td>
+				</tr>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">StrongWind</td>
+					<td class="border px-3 py-2">&gt; 0.4</td>
+					<td class="border px-3 py-2">&gt; 0.3</td>
+					<td class="border px-3 py-2">&gt; 0.2</td>
+					<td class="border px-3 py-2">&gt; 0.15</td>
+					<td class="border px-3 py-2">&gt; 0.1</td>
+					<td class="border px-3 py-2">&gt; 0.05</td>
+					<td class="border px-3 py-2">&gt; 0.03</td>
+				</tr>
+				<tr>
+					<td class="border px-3 py-2 font-medium">Windy</td>
+					<td class="border px-3 py-2">&gt; 0.2</td>
+					<td class="border px-3 py-2">&gt; 0.15</td>
+					<td class="border px-3 py-2">&gt; 0.1</td>
+					<td class="border px-3 py-2">&gt; 0.05</td>
+					<td class="border px-3 py-2">&gt; 0.03</td>
+					<td class="border px-3 py-2">&gt; 0.02</td>
+					<td class="border px-3 py-2">&gt; 0.01</td>
+				</tr>
+				<tr class="bg-gray-50">
+					<td class="border px-3 py-2 font-medium">Neutral</td>
+					<td class="border px-3 py-2">-0.2 to 0.2</td>
+					<td class="border px-3 py-2">-0.15 to 0.15</td>
+					<td class="border px-3 py-2">-0.1 to 0.1</td>
+					<td class="border px-3 py-2">-0.05 to 0.05</td>
+					<td class="border px-3 py-2">-0.03 to 0.03</td>
+					<td class="border px-3 py-2">-0.02 to 0.02</td>
+					<td class="border px-3 py-2">-0.01 to 0.01</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<!-- Hướng Dẫn Sử Dụng -->
+<div class="bg-white shadow-md rounded-lg p-4">
+	<div class="flex items-center border-b pb-2 mb-3">
+		<i class="fas fa-book mr-2 text-indigo-600"></i>
+		<h2 class="text-lg font-semibold text-gray-800">
+			Hướng Dẫn Sử Dụng
+		</h2>
+	</div>
+
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+		<div>
+			<h3 class="text-md font-semibold text-gray-800 mb-2">Best Practices</h3>
+			<ul class="list-disc list-inside text-gray-600 space-y-1">
+				<li>Luôn kiểm tra xu hướng dài hạn trước khi vào lệnh</li>
+				<li>Sử dụng stop-loss để quản lý rủi ro</li>
+				<li>Không giao dịch khi thị trường đóng cửa</li>
+				<li>Theo dõi tin tức kinh tế quan trọng</li>
+				<li>Kết hợp nhiều chỉ báo để xác nhận tín hiệu</li>
+			</ul>
+		</div>
+
+		<div>
+			<h3 class="text-md font-semibold text-gray-800 mb-2">Risk Management</h3>
+			<ul class="list-disc list-inside text-gray-600 space-y-1">
+				<li>Không risk quá 2% tài khoản cho mỗi lệnh</li>
+				<li>Sử dụng position sizing phù hợp</li>
+				<li>Diversify portfolio across multiple symbols</li>
+				<li>Regular review và adjust strategy parameters</li>
+				<li>Luôn có kế hoạch thoát lệnh rõ ràng</li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+{% endblock %}

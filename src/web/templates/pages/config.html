@@ -1,0 +1,372 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}System Configuration - Trading Signals{% endblock %}
+
+{% block page_title %}System Configuration{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-cog text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">System Configuration</h1>
+    </div>
+    
+    <div class="flex flex-wrap gap-3">
+        <button type="button" onclick="saveAllConfig()" 
+                class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-save mr-2"></i>
+            Save All
+        </button>
+        
+        <button type="button" onclick="resetConfig()" 
+                class="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors">
+            <i class="fas fa-undo mr-2"></i>
+            Reset
+        </button>
+        
+        <button type="button" onclick="refreshConfig()" 
+                class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-sync-alt mr-2"></i>
+            Refresh
+        </button>
+    </div>
+</div>
+
+<!-- System Status Overview -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Database Status -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Database</p>
+                <p class="text-2xl font-bold text-green-600">Connected</p>
+            </div>
+            <div class="p-3 bg-green-100 rounded-full">
+                <i class="fas fa-database text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span class="text-sm text-gray-500">SQLite - 2.3GB</span>
+        </div>
+    </div>
+
+    <!-- Redis Status -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Redis</p>
+                <p class="text-2xl font-bold text-green-600">Connected</p>
+            </div>
+            <div class="p-3 bg-red-100 rounded-full">
+                <i class="fas fa-memory text-red-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span class="text-sm text-gray-500">127.0.0.1:6379</span>
+        </div>
+    </div>
+
+    <!-- Workers Status -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Workers</p>
+                <p class="text-2xl font-bold text-yellow-600">2/3 Active</p>
+            </div>
+            <div class="p-3 bg-yellow-100 rounded-full">
+                <i class="fas fa-server text-yellow-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span class="text-sm text-gray-500">1 worker offline</span>
+        </div>
+    </div>
+
+    <!-- API Status -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">API</p>
+                <p class="text-2xl font-bold text-green-600">Running</p>
+            </div>
+            <div class="p-3 bg-blue-100 rounded-full">
+                <i class="fas fa-plug text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span class="text-sm text-gray-500">Port 5010</span>
+        </div>
+    </div>
+</div>
+
+<!-- Configuration Tabs -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="border-b border-gray-200">
+        <nav class="flex space-x-8 px-6" aria-label="Tabs">
+            <button onclick="switchTab('general')" id="general-tab" 
+                    class="py-4 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                General
+            </button>
+            <button onclick="switchTab('database')" id="database-tab" 
+                    class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Database
+            </button>
+            <button onclick="switchTab('workers')" id="workers-tab" 
+                    class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Workers
+            </button>
+            <button onclick="switchTab('api')" id="api-tab" 
+                    class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                API
+            </button>
+            <button onclick="switchTab('security')" id="security-tab" 
+                    class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Security
+            </button>
+        </nav>
+    </div>
+
+    <!-- General Configuration -->
+    <div id="general-content" class="p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">General Settings</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Application Name</label>
+                <input type="text" value="Trading Signals System" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Environment</label>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="development">Development</option>
+                    <option value="staging">Staging</option>
+                    <option value="production" selected>Production</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Debug Mode</label>
+                <div class="flex items-center">
+                    <input type="checkbox" id="debugMode" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="debugMode" class="ml-2 block text-sm text-gray-900">Enable debug logging</label>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Log Level</label>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="INFO" selected>INFO</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Configuration -->
+    <div id="database-content" class="p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Database Settings</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Database Type</label>
+                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="sqlite" selected>SQLite</option>
+                    <option value="postgresql">PostgreSQL</option>
+                    <option value="mysql">MySQL</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Connection String</label>
+                <input type="text" value="sqlite:///trading_signals.db" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Pool Size</label>
+                <input type="number" value="10" min="1" max="100"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Connection Timeout</label>
+                <input type="number" value="30" min="1" max="300"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+    </div>
+
+    <!-- Workers Configuration -->
+    <div id="workers-content" class="p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Worker Settings</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Max Workers</label>
+                <input type="number" value="5" min="1" max="20"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Worker Timeout</label>
+                <input type="number" value="300" min="60" max="3600"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Queue Size</label>
+                <input type="number" value="1000" min="100" max="10000"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Retry Attempts</label>
+                <input type="number" value="3" min="1" max="10"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+    </div>
+
+    <!-- API Configuration -->
+    <div id="api-content" class="p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">API Settings</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">API Port</label>
+                <input type="number" value="5010" min="1000" max="65535"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">API Host</label>
+                <input type="text" value="0.0.0.0" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Rate Limit</label>
+                <input type="number" value="100" min="10" max="1000"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">CORS Origins</label>
+                <input type="text" value="*" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Configuration -->
+    <div id="security-content" class="p-6 hidden">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Security Settings</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                <div class="flex">
+                    <input type="password" value="sk-1234567890abcdef" readonly
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg bg-gray-50">
+                    <button onclick="generateApiKey()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Session Timeout</label>
+                <input type="number" value="3600" min="300" max="86400"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Enable HTTPS</label>
+                <div class="flex items-center">
+                    <input type="checkbox" id="enableHttps" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="enableHttps" class="ml-2 block text-sm text-gray-900">Force HTTPS connections</label>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">IP Whitelist</label>
+                <textarea rows="3" placeholder="192.168.1.0/24&#10;10.0.0.0/8"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="mt-8 flex justify-end space-x-4">
+    <button onclick="resetConfig()" 
+            class="px-6 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+        Reset to Defaults
+    </button>
+    <button onclick="saveAllConfig()" 
+            class="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+        Save Configuration
+    </button>
+</div>
+
+<script>
+// Configuration management functionality
+function switchTab(tabName) {
+    // Hide all content
+    document.querySelectorAll('[id$="-content"]').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+        tab.classList.remove('border-blue-500', 'text-blue-600');
+        tab.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected content
+    document.getElementById(tabName + '-content').classList.remove('hidden');
+    
+    // Add active class to selected tab
+    const activeTab = document.getElementById(tabName + '-tab');
+    activeTab.classList.remove('border-transparent', 'text-gray-500');
+    activeTab.classList.add('border-blue-500', 'text-blue-600');
+}
+
+function saveAllConfig() {
+    console.log('Saving all configuration...');
+    // Show success message
+    showNotification('Configuration saved successfully!', 'success');
+}
+
+function resetConfig() {
+    if (confirm('Are you sure you want to reset all configuration to defaults?')) {
+        console.log('Resetting configuration...');
+        // Reset form values
+        showNotification('Configuration reset to defaults!', 'warning');
+    }
+}
+
+function refreshConfig() {
+    console.log('Refreshing configuration...');
+    // Reload configuration from server
+    showNotification('Configuration refreshed!', 'info');
+}
+
+function generateApiKey() {
+    const newKey = 'sk-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    document.querySelector('input[type="password"]').value = newKey;
+    showNotification('New API key generated!', 'success');
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' :
+        type === 'warning' ? 'bg-yellow-500 text-white' :
+        type === 'error' ? 'bg-red-500 text-white' :
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default tab
+    switchTab('general');
+});
+</script>
+{% endblock %}

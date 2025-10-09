@@ -1,0 +1,433 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Notification Management - Trading Signals{% endblock %}
+
+{% block page_title %}Notification Management{% endblock %}
+
+{% block content %}
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+    <div class="flex items-center mb-4 sm:mb-0">
+        <i class="fas fa-bell text-blue-600 text-2xl mr-3"></i>
+        <h1 class="text-3xl font-bold text-gray-800">Notification Management</h1>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        <button onclick="addNotification()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            Add Notification
+        </button>
+
+        <button onclick="testAllNotifications()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <i class="fas fa-vial mr-2"></i>
+            Test All
+        </button>
+
+        <button onclick="clearAllNotifications()"
+            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+            <i class="fas fa-trash mr-2"></i>
+            Clear All
+        </button>
+    </div>
+</div>
+
+<!-- Notification Stats -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Notifications -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Notifications</p>
+                <p class="text-3xl font-bold text-gray-900">24</p>
+            </div>
+            <div class="p-3 bg-blue-100 rounded-full">
+                <i class="fas fa-bell text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium">+5</span>
+            <span class="text-sm text-gray-500 ml-2">this week</span>
+        </div>
+    </div>
+
+    <!-- Active Notifications -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Active</p>
+                <p class="text-3xl font-bold text-green-600">18</p>
+            </div>
+            <div class="p-3 bg-green-100 rounded-full">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-green-600 font-medium">75%</span>
+            <span class="text-sm text-gray-500 ml-2">of total</span>
+        </div>
+    </div>
+
+    <!-- Paused Notifications -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Paused</p>
+                <p class="text-3xl font-bold text-yellow-600">4</p>
+            </div>
+            <div class="p-3 bg-yellow-100 rounded-full">
+                <i class="fas fa-pause text-yellow-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-yellow-600 font-medium">16.7%</span>
+            <span class="text-sm text-gray-500 ml-2">of total</span>
+        </div>
+    </div>
+
+    <!-- Disabled Notifications -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Disabled</p>
+                <p class="text-3xl font-bold text-red-600">2</p>
+            </div>
+            <div class="p-3 bg-red-100 rounded-full">
+                <i class="fas fa-times-circle text-red-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center">
+            <span class="text-sm text-red-600 font-medium">8.3%</span>
+            <span class="text-sm text-gray-500 ml-2">of total</span>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Types -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Email Notifications -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-envelope mr-2 text-blue-600"></i>
+                Email Notifications
+            </h3>
+        </div>
+        <div class="p-6 space-y-4">
+            <!-- Email Notification 1 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Signal Alerts</h4>
+                        <p class="text-sm text-gray-500">New trading signals</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                    <button onclick="toggleNotification('email-signal')"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Email Notification 2 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Daily Reports</h4>
+                        <p class="text-sm text-gray-500">Daily performance summary</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                    <button onclick="toggleNotification('email-daily')"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Email Notification 3 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-pause text-yellow-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Error Alerts</h4>
+                        <p class="text-sm text-gray-500">System errors and warnings</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Paused
+                    </span>
+                    <button onclick="toggleNotification('email-error')"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SMS Notifications -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-sms mr-2 text-green-600"></i>
+                SMS Notifications
+            </h3>
+        </div>
+        <div class="p-6 space-y-4">
+            <!-- SMS Notification 1 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Urgent Signals</h4>
+                        <p class="text-sm text-gray-500">High priority trading signals</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                    <button onclick="toggleNotification('sms-urgent')"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SMS Notification 2 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-times text-red-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">System Alerts</h4>
+                        <p class="text-sm text-gray-500">Critical system issues</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        Disabled
+                    </span>
+                    <button onclick="toggleNotification('sms-system')"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Webhook Notifications -->
+<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <i class="fas fa-link mr-2 text-purple-600"></i>
+            Webhook Notifications
+        </h3>
+    </div>
+    <div class="p-6">
+        <div class="space-y-4">
+            <!-- Webhook 1 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Discord Bot</h4>
+                        <p class="text-sm text-gray-500">https://discord.com/api/webhooks/...</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                    <button onclick="testWebhook('discord')"
+                        class="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                        Test
+                    </button>
+                    <button onclick="toggleNotification('webhook-discord')"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Webhook 2 -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900">Slack Integration</h4>
+                        <p class="text-sm text-gray-500">https://hooks.slack.com/services/...</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                    </span>
+                    <button onclick="testWebhook('slack')"
+                        class="px-3 py-1 text-sm text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                        Test
+                    </button>
+                    <button onclick="toggleNotification('webhook-slack')"
+                        class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Notification Modal -->
+<div id="addNotificationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Add New Notification</h3>
+            </div>
+            <div class="p-6">
+                <form id="addNotificationForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Notification Type</label>
+                            <select id="notificationType" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Type</option>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                                <option value="webhook">Webhook</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                            <input type="text" id="notificationName" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea id="notificationDescription" rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Endpoint/Address</label>
+                            <input type="text" id="notificationEndpoint" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button onclick="closeAddNotificationModal()"
+                    class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="saveNotification()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                    Add Notification
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Notification management functionality
+    function addNotification() {
+        document.getElementById('addNotificationModal').classList.remove('hidden');
+    }
+
+    function closeAddNotificationModal() {
+        document.getElementById('addNotificationModal').classList.add('hidden');
+        document.getElementById('addNotificationForm').reset();
+    }
+
+    function saveNotification() {
+        const form = document.getElementById('addNotificationForm');
+        if (form.checkValidity()) {
+            console.log('Adding notification...');
+            closeAddNotificationModal();
+            showNotification('Notification added successfully!', 'success');
+        } else {
+            form.reportValidity();
+        }
+    }
+
+    function toggleNotification(notificationId) {
+        console.log('Toggling notification:', notificationId);
+        showNotification('Notification settings updated!', 'success');
+    }
+
+    function testWebhook(webhookId) {
+        console.log('Testing webhook:', webhookId);
+        showNotification('Testing webhook...', 'info');
+
+        // Simulate test
+        setTimeout(() => {
+            showNotification('Webhook test successful!', 'success');
+        }, 2000);
+    }
+
+    function testAllNotifications() {
+        console.log('Testing all notifications...');
+        showNotification('Testing all notifications...', 'info');
+    }
+
+    function clearAllNotifications() {
+        if (confirm('Are you sure you want to clear all notifications?')) {
+            console.log('Clearing all notifications...');
+            showNotification('All notifications cleared!', 'warning');
+        }
+    }
+
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${type === 'success' ? 'bg-green-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                    type === 'error' ? 'bg-red-500 text-white' :
+                        'bg-blue-500 text-white'
+            }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

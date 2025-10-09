@@ -1,0 +1,255 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Trading Signals - Real-time{% endblock %}
+
+{% block page_title %}Trading Signals{% endblock %}
+
+{% block content %}
+<div x-data="signalsApp()" x-init="init()">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-6 border-b border-gray-200">
+        <div class="flex items-center mb-4 sm:mb-0">
+            <i class="fas fa-bell text-blue-600 text-2xl mr-3"></i>
+            <h1 class="text-3xl font-bold text-gray-800">Trading Signals</h1>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 ml-4">
+                <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                LIVE
+            </span>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+            <button @click="toggleAutoRefresh()" 
+                :class="autoRefresh ? 'bg-green-600 hover:bg-green-700 text-white' : 'text-blue-600 bg-white border border-blue-600 hover:bg-blue-50'"
+                class="flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors">
+                <i :class="autoRefresh ? 'fas fa-pause' : 'fas fa-play'" class="mr-2"></i>
+                <span x-text="autoRefresh ? 'Stop Auto' : 'Auto Refresh'"></span>
+            </button>
+
+            <button hx-get="/api/signals/stats" 
+                    hx-target="#stats-container" 
+                    hx-trigger="click"
+                    class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-sync-alt mr-2"></i>
+                Refresh Now
+            </button>
+
+            <div class="relative">
+                <button class="flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-cog mr-2"></i>
+                    Settings
+                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signal Stats - HTMX Target -->
+    <div id="stats-container" 
+         hx-get="/api/signals/stats" 
+         hx-trigger="load, every 30s"
+         hx-target="this">
+        <!-- Loading placeholder -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div class="h-8 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div class="h-8 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div class="h-8 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div class="h-8 bg-gray-200 rounded w-1/2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-filter mr-2 text-blue-600"></i>
+                Filters
+            </h3>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <!-- Symbol Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+                    <select hx-get="/api/signals/list" 
+                            hx-target="#signals-table" 
+                            hx-trigger="change"
+                            hx-include="[name='type'], [name='strategy'], [name='timeRange'], [name='status']"
+                            name="symbol"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Symbols</option>
+                        <option value="TQQQ">TQQQ</option>
+                        <option value="AAPL">AAPL</option>
+                        <option value="MSFT">MSFT</option>
+                    </select>
+                </div>
+
+                <!-- Signal Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                    <select hx-get="/api/signals/list" 
+                            hx-target="#signals-table" 
+                            hx-trigger="change"
+                            hx-include="[name='symbol'], [name='strategy'], [name='timeRange'], [name='status']"
+                            name="type"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Types</option>
+                        <option value="bull_entry">Buy</option>
+                        <option value="bear_exit">Sell</option>
+                    </select>
+                </div>
+
+                <!-- Strategy -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Strategy</label>
+                    <select hx-get="/api/signals/list" 
+                            hx-target="#signals-table" 
+                            hx-trigger="change"
+                            hx-include="[name='symbol'], [name='type'], [name='timeRange'], [name='status']"
+                            name="strategy"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Strategies</option>
+                        <option value="MACD Zone Strategy">MACD Zone Strategy</option>
+                        <option value="MACD Strategy">MACD Strategy</option>
+                    </select>
+                </div>
+
+                <!-- Time Range -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
+                    <select hx-get="/api/signals/list" 
+                            hx-target="#signals-table" 
+                            hx-trigger="change"
+                            hx-include="[name='symbol'], [name='type'], [name='strategy'], [name='status']"
+                            name="timeRange"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="1h">Last Hour</option>
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select hx-get="/api/signals/list" 
+                            hx-target="#signals-table" 
+                            hx-trigger="change"
+                            hx-include="[name='symbol'], [name='type'], [name='strategy'], [name='timeRange']"
+                            name="status"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="executed">Executed</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3 mt-4">
+                <button hx-get="/api/signals/list" 
+                        hx-target="#signals-table" 
+                        hx-include="[name='symbol'], [name='type'], [name='strategy'], [name='timeRange'], [name='status']"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                    Apply Filters
+                </button>
+                <button onclick="clearFilters()"
+                    class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signals Table - HTMX Target -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Recent Signals</h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">Auto-refresh: 30s</span>
+                    <button onclick="exportSignals()"
+                        class="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                        <i class="fas fa-download mr-1"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="signals-table" 
+             hx-get="/api/signals/list?limit=20" 
+             hx-trigger="load, every 30s"
+             hx-target="this">
+            <!-- Loading placeholder -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strategy</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeframe</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="7" class="text-center text-gray-500 py-8">
+                                <div class="flex items-center justify-center">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                                    Loading signals...
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function signalsApp() {
+    return {
+        autoRefresh: false,
+        
+        toggleAutoRefresh() {
+            this.autoRefresh = !this.autoRefresh;
+            if (this.autoRefresh) {
+                // HTMX will handle the auto-refresh with hx-trigger="every 30s"
+                console.log('Auto refresh enabled');
+            } else {
+                // Disable auto-refresh by removing hx-trigger
+                console.log('Auto refresh disabled');
+            }
+        }
+    }
+}
+
+function clearFilters() {
+    document.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+    });
+    // Trigger refresh
+    htmx.trigger('#signals-table', 'htmx:trigger');
+}
+
+function exportSignals() {
+    console.log('Exporting signals...');
+}
+</script>
+{% endblock %}

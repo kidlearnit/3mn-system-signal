@@ -1,0 +1,258 @@
+version: "3.8"
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3309:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Auto-setup database service
+  db_setup:
+    build: .
+    command: python scripts/auto_setup_db.py
+    environment:
+      - PYTHONPATH=/code
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_ROOT_USER=root
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend:/code
+      - ./config:/code/config
+    working_dir: /code
+    restart: "no" # Chỉ chạy một lần
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    command: bash -lc "pip install -r requirements.txt && python -m flask --app init run --host=0.0.0.0 --port=5000"
+    environment:
+      - PYTHONPATH=/code
+      - FLASK_ENV=production
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - VNSTOCK_ENABLED=${VNSTOCK_ENABLED}
+      - YF_ENABLED=${YF_ENABLED}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+    ports:
+      - "5010:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      db_setup:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/code
+      - ./config:/code/config
+    working_dir: /code
+
+  worker:
+    build: .
+    command: bash -lc "pip install -r requirements.txt && python worker/run_worker.py"
+    environment:
+      - PYTHONPATH=/code
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - VNSTOCK_ENABLED=${VNSTOCK_ENABLED}
+      - YF_ENABLED=${YF_ENABLED}
+      - MT5_ENABLED=${MT5_ENABLED}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+      # MT5 trading configuration
+      - MT5_LOGIN=${MT5_LOGIN}
+      - MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_SERVER=${MT5_SERVER}
+      - MT5_PATH=${MT5_PATH}
+      - MT5_ALLOWED_EXCHANGES=${MT5_ALLOWED_EXCHANGES}
+      - MT5_SYMBOL_PREFIX=${MT5_SYMBOL_PREFIX}
+      - MT5_DEFAULT_VOLUME=${MT5_DEFAULT_VOLUME}
+      - MT5_TP_PCT=${MT5_TP_PCT}
+      - MT5_SL_PCT=${MT5_SL_PCT}
+      - MT5_DEVIATION=${MT5_DEVIATION}
+      - MT5_MAGIC=${MT5_MAGIC}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/code
+      - ./config:/code/config
+    working_dir: /code
+
+  scheduler:
+    build: .
+    command: python worker/scheduler_multi.py
+    environment:
+      - PYTHONPATH=/code
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - VNSTOCK_ENABLED=${VNSTOCK_ENABLED}
+      - YF_ENABLED=${YF_ENABLED}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/code
+    working_dir: /code
+
+  worker_vn:
+    build: .
+    command: python worker/worker_vn_macd.py
+    environment:
+      - PYTHONPATH=/code
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - VNSTOCK_ENABLED=${VNSTOCK_ENABLED}
+      - YF_ENABLED=${YF_ENABLED}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/code
+    working_dir: /code
+  worker_us:
+    build: .
+    command: python worker/worker_us_macd.py
+    environment:
+      - PYTHONPATH=/code
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - VNSTOCK_ENABLED=${VNSTOCK_ENABLED}
+      - YF_ENABLED=${YF_ENABLED}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/code
+    working_dir: /code
+
+  worker_backfill:
+    build: .
+    command: rq worker backfill --name worker_backfill --verbose
+    environment:
+      - PYTHONPATH=/code
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - VNSTOCK_ENABLED=${VNSTOCK_ENABLED}
+      - YF_ENABLED=${YF_ENABLED}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/code
+    working_dir: /code
+
+  # Service để chạy backfill commands
+  backfill:
+    build: .
+    command: sleep infinity # Keep container running
+    environment:
+      - PYTHONPATH=/code
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - VNSTOCK_ENABLED=${VNSTOCK_ENABLED}
+      - YF_ENABLED=${YF_ENABLED}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./backend:/code
+    working_dir: /code
+    profiles: [ "tools" ] # Chỉ chạy khi được yêu cầu
+
+volumes:
+  mysql_data:

@@ -1,0 +1,31 @@
+version: 1.0
+last_updated: '2025-09-29'
+symbol: COST
+company: COST Inc.
+weight: 1.0
+sector: Technology
+indicators:
+  macd:
+    params:
+      fast: 7
+      slow: 113
+      signal: 144
+    thresholds:
+      1m:
+        bull: 0.33
+        bear: -0.33
+      2m:
+        bull: 0.47
+        bear: -0.47
+      5m:
+        bull: 0.74
+        bear: -0.74
+      15m:
+        bull: 1.0
+        bear: -1.0
+      30m:
+        bull: 1.47
+        bear: -1.47
+      1h:
+        bull: 1.74
+        bear: -1.74

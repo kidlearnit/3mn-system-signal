@@ -1,0 +1,392 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+
+
+<div class="min-h-screen bg-gray-900 text-white">
+    <!-- Header -->
+    <header class="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-3">
+                <div class="flex items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 bg-orange-500 rounded flex items-center justify-center">
+                            <span class="text-sm font-bold text-white">⚙</span>
+                        </div>
+                        <div>
+                            <h1 class="text-sm font-semibold text-white">
+                                Strategy Management
+                            </h1>
+                            <p class="text-xs text-gray-400">Strategy ID: <span id="strategyId"
+                                    class="text-yellow-400">Loading...</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded">
+                        <span id="currentTime"></span>
+                    </div>
+                    <button onclick="refreshDashboard()"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <!-- Strategy Overview -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold text-white">Strategy Overview</h2>
+                <div class="flex space-x-2">
+                    <button onclick="toggleStrategy()"
+                        class="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                        Start Strategy
+                    </button>
+                    <button onclick="removeStrategy()"
+                        class="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                        Remove
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-sm font-semibold text-white" id="strategySymbol">TQQQ</div>
+                    <div class="text-xs text-gray-400">Symbol</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm font-semibold text-red-400" id="strategyStatus">Stopped</div>
+                    <div class="text-xs text-gray-400">Status</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm font-semibold text-white" id="strategyMarket">US</div>
+                    <div class="text-xs text-gray-400">Market</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indicators -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm font-bold mb-6" class="text-white">Real-time Indicators</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-sm font-bold" class="text-white" id="fmacdValue">0.0000</div>
+                    <div class="text-sm" class="text-gray-400">FMACD</div>
+                    <div class="text-xs" class="text-gray-500" id="fmacdZone">Neutral</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm font-bold" class="text-white" id="smacdValue">0.0000</div>
+                    <div class="text-sm" class="text-gray-400">SMACD</div>
+                    <div class="text-xs" class="text-gray-500" id="smacdZone">Neutral</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-sm font-bold" class="text-white" id="barsValue">0.0000</div>
+                    <div class="text-sm" class="text-gray-400">BARS</div>
+                    <div class="text-xs" class="text-gray-500" id="barsZone">Neutral</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multi-timeframe Analysis -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <h2 class="text-sm font-bold mb-6" class="text-white">Multi-timeframe Analysis</h2>
+            <div id="timeframeIndicators" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Timeframe indicators will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Recent Signals -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-sm font-bold" class="text-white">Recent Signals</h2>
+                <button onclick="clearSignals()"
+                    class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                    🗑️ Clear
+                </button>
+            </div>
+            <div id="recentSignals" class="space-y-3 max-h-64 overflow-y-auto">
+                <!-- Signals will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Strategy Logs -->
+        <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-sm font-bold" class="text-white">Strategy Logs</h2>
+                <button onclick="clearLogs()"
+                    class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded transition-colors">
+                    🗑️ Clear
+                </button>
+            </div>
+            <div id="strategyLogs" class="space-y-2 max-h-48 overflow-y-auto text-sm">
+                <!-- Logs will be loaded here -->
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Notification Container -->
+<div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<script>
+    // Global variables
+    let currentStrategy = null;
+    //let socket = null;
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        loadStrategyData();
+        //initializeSocket();
+    });
+
+    // Load strategy data
+    async function loadStrategyData() {
+        try {
+            const strategyId = getStrategyIdFromUrl();
+            const response = await fetch(`/api/strategies/${strategyId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                currentStrategy = data.strategy;
+                updateStrategyHeader();
+                updateIndicators(data.indicators);
+                updateRecentSignals(data.signals);
+                updateLogs(data.logs);
+            }
+        } catch (error) {
+            console.error('Error loading strategy data:', error);
+            showNotification('Error loading strategy data', 'error');
+        }
+    }
+
+    // Get strategy ID from URL
+    function getStrategyIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('id') || '1';
+    }
+
+    // Update strategy header
+    function updateStrategyHeader() {
+        if (!currentStrategy) return;
+
+        document.getElementById('strategyId').textContent = currentStrategy.id;
+        document.getElementById('strategySymbol').textContent = currentStrategy.symbol;
+        document.getElementById('strategyStatus').textContent = currentStrategy.status;
+        document.getElementById('strategyMarket').textContent = currentStrategy.market.toUpperCase();
+    }
+
+    // Update indicators
+    function updateIndicators(indicators) {
+        if (!indicators) return;
+
+        if (indicators.fmacd !== undefined) {
+            document.getElementById('fmacdValue').textContent = indicators.fmacd.toFixed(4);
+            document.getElementById('fmacdZone').textContent = getZoneName(indicators.fmacd);
+        }
+
+        if (indicators.smacd !== undefined) {
+            document.getElementById('smacdValue').textContent = indicators.smacd.toFixed(4);
+            document.getElementById('smacdZone').textContent = getZoneName(indicators.smacd);
+        }
+
+        if (indicators.bars !== undefined) {
+            document.getElementById('barsValue').textContent = indicators.bars.toFixed(4);
+            document.getElementById('barsZone').textContent = getZoneName(indicators.bars);
+        }
+    }
+
+    // Get zone name based on value
+    function getZoneName(value) {
+        const absValue = Math.abs(value);
+        if (absValue >= 0.74) return 'IGR';
+        if (absValue >= 0.55) return 'Greed';
+        if (absValue >= 0.37) return 'Bull';
+        if (absValue >= 0.18) return 'Pos';
+        if (absValue >= 0.00) return 'Neutral';
+        if (absValue >= 0.18) return 'Neg';
+        if (absValue >= 0.37) return 'Bear';
+        if (absValue >= 0.55) return 'Fear';
+        return 'Panic';
+    }
+
+    // Update recent signals
+    function updateRecentSignals(signals) {
+        const container = document.getElementById('recentSignals');
+        container.innerHTML = '';
+
+        if (!signals || signals.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 py-8">No signals yet</p>';
+            return;
+        }
+
+        signals.slice(0, 10).forEach(signal => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-700 rounded-lg p-3 border border-gray-600';
+
+            const signalClass = signal.signal_type === 'BUY' ? 'signal-buy' :
+                signal.signal_type === 'SELL' ? 'signal-sell' : 'signal-hold';
+
+            div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-semibold text-white">${signal.symbol}</span>
+                                <span class="text-sm ${signalClass} font-semibold">${signal.signal_type}</span>
+                            </div>
+                            <p class="text-sm text-gray-400">${signal.timeframe} • ${signal.zone} • ${new Date(signal.timestamp).toLocaleTimeString()}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-400">${(signal.strength * 100).toFixed(0)}%</div>
+                        </div>
+                    </div>
+                `;
+
+            container.appendChild(div);
+        });
+    }
+
+    // Update logs
+    function updateLogs(logs) {
+        const container = document.getElementById('strategyLogs');
+        container.innerHTML = '';
+
+        if (!logs || logs.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 py-4">No logs yet</p>';
+            return;
+        }
+
+        logs.slice(-20).forEach(log => {
+            const div = document.createElement('div');
+            div.className = 'text-xs text-gray-300 border-b border-gray-700 pb-1';
+            div.innerHTML = `
+                    <span class="text-gray-500">[${new Date(log.timestamp).toLocaleTimeString()}]</span>
+                    <span class="ml-2">${log.message}</span>
+                `;
+            container.appendChild(div);
+        });
+    }
+
+    // Override common functions for strategy_management.html
+    function refreshDashboard() {
+        loadStrategyData();
+        showNotification('Strategy details refreshed', 'info');
+    }
+
+    function clearSignals() {
+        if (confirm('Are you sure you want to clear all signals?')) {
+            showNotification('Signals cleared', 'info');
+        }
+    }
+
+    function clearLogs() {
+        if (confirm('Are you sure you want to clear all logs?')) {
+            showNotification('Logs cleared', 'info');
+        }
+    }
+
+    function showAddStrategyModal() {
+        // Redirect to dashboard to add strategy
+        window.location.href = '/strategy-dashboard';
+    }
+
+    function hideAddStrategyModal() {
+        // Not applicable in this page
+        console.log('hideAddStrategyModal called in strategy_management.html');
+    }
+
+    function toggleStrategy(strategyId) {
+        if (!currentStrategy) return;
+
+        const action = currentStrategy.status === 'running' ? 'stop' : 'start';
+        const endpoint = action === 'start' ? '/api/strategies/start' : '/api/strategies/stop';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ strategy_id: currentStrategy.id })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Strategy ${action}ed successfully`, 'success');
+                    loadStrategyData();
+                } else {
+                    showNotification(`Failed to ${action} strategy: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`Error ${action}ing strategy:`, error);
+                showNotification(`Error ${action}ing strategy`, 'error');
+            });
+    }
+
+    function removeStrategy(strategyId) {
+        if (!confirm('Are you sure you want to remove this strategy?')) {
+            return;
+        }
+
+        fetch('/api/strategies/remove', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ strategy_id: currentStrategy.id })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Strategy removed successfully', 'success');
+                    // Redirect back to dashboard
+                    setTimeout(() => {
+                        window.location.href = '/strategy-dashboard';
+                    }, 1000);
+                } else {
+                    showNotification(`Failed to remove strategy: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error removing strategy:', error);
+                showNotification('Error removing strategy', 'error');
+            });
+    }
+
+    function toggleMonitoring() {
+        // Toggle monitoring for this specific strategy
+        const strategyId = getStrategyIdFromUrl();
+        if (!strategyId) {
+            showNotification('No strategy selected', 'error');
+            return;
+        }
+
+        const isMonitoring = document.getElementById('strategyStatus')?.textContent === 'Running';
+        const action = isMonitoring ? 'stop' : 'start';
+
+        fetch(`/api/strategies/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ strategy_id: strategyId })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Strategy ${action}ed successfully`, 'success');
+                    loadStrategyData();
+                } else {
+                    showNotification(`Failed to ${action} strategy: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(`Error ${action}ing strategy:`, error);
+                showNotification(`Error ${action}ing strategy`, 'error');
+            });
+    }
+</script>
+{% endblock %}
