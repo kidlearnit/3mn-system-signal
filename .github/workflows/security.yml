@@ -1,0 +1,36 @@
+name: Security Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Check for sensitive data
+      run: |
+        echo "Checking for sensitive files..."
+        if [ -f ".env" ]; then
+          echo "❌ .env file found - this should not be committed!"
+          exit 1
+        fi
+        
+        if grep -r "password\|secret\|token\|key" --include="*.py" --include="*.js" --include="*.yml" . | grep -v "your_.*_here\|placeholder\|template"; then
+          echo "❌ Potential sensitive data found in code!"
+          exit 1
+        fi
+        
+        echo "✅ No sensitive data detected"
+    
+    - name: Check .gitignore
+      run: |
+        if ! grep -q "\.env" .gitignore; then
+          echo "❌ .env not in .gitignore!"
+          exit 1
+        fi
+        echo "✅ .gitignore properly configured"
