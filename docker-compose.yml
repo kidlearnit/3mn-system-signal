@@ -286,7 +286,11 @@ services:
 
   emailer:
     build: .
-    command: python worker/sma_email_digest.py
+    command: python worker/enhanced_email_digest.py
+
+  telegram_digest:
+    build: .
+    command: python worker/telegram_digest_vietnamese.py
     environment:
       - PYTHONPATH=/code
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
@@ -296,23 +300,20 @@ services:
       - MYSQL_DATABASE=${MYSQL_DB}
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
-      - EMAIL_ADDRESS=${EMAIL_ADDRESS}
-      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
-      - EMAIL_TO=${EMAIL_TO}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
       - EMAIL_DIGEST_SYMBOLS=${EMAIL_DIGEST_SYMBOLS}
       - EMAIL_DIGEST_LIMIT=${EMAIL_DIGEST_LIMIT}
       - EMAIL_DIGEST_TIMEFRAMES=${EMAIL_DIGEST_TIMEFRAMES}
-      - EMAIL_DIGEST_INTERVAL_SECONDS=${EMAIL_DIGEST_INTERVAL_SECONDS}
-      - EMAIL_DIGEST_SUBJECT=${EMAIL_DIGEST_SUBJECT}
+      - TELEGRAM_DIGEST_INTERVAL_SECONDS=${TELEGRAM_DIGEST_INTERVAL_SECONDS}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
       - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./backend:/code
-      - ./config:/code/config
     working_dir: /code
 
 volumes:

@@ -130,7 +130,18 @@ def _collect_digest_rows() -> List[dict]:
     limit = int(os.getenv("EMAIL_DIGEST_LIMIT", "25"))
     monitor = _get_symbols_to_monitor()
     rows: List[dict] = []
+    
     for sid, ticker, exchange in monitor:
+        # Only process symbols whose market is currently open
+        try:
+            market_open, _, _ = is_market_open(exchange)
+            if not market_open:
+                logger.debug(f"Skipping {ticker} ({exchange}) - market closed")
+                continue
+        except Exception as e:
+            logger.warning(f"Could not check market status for {ticker} ({exchange}): {e}")
+            # Proceed if we can't determine market status
+        
         latest = _get_latest_sma_signal_for_symbol(sid, timeframes)
         for item in latest:
             sig_type = item.get("signal_type", "")
@@ -166,22 +177,42 @@ def _get_int_env(name: str, default_value: int) -> int:
 
 
 def run_once() -> bool:
-    # Only run when the market is open
+    # Only run when ANY monitored market is open
     try:
-        if not is_market_open():
-            logger.info("Market is closed; skipping digest send.")
+        symbols = _get_symbols_to_monitor()
+        if not symbols:
+            logger.info("No symbols to monitor; skipping digest send.")
             return False
-    except Exception:
+        
+        # Check if any market is open
+        markets_open = False
+        for sid, ticker, exchange in symbols:
+            market_open, _, _ = is_market_open(exchange)
+            if market_open:
+                markets_open = True
+                break
+        
+        if not markets_open:
+            logger.info("All monitored markets are closed; skipping digest send.")
+            return False
+            
+    except Exception as e:
         # If we can't determine, proceed but log
-        logger.warning("is_market_open check failed; proceeding with digest.")
+        logger.warning(f"Market status check failed: {e}; proceeding with digest.")
     if not email_service.is_configured():
         logger.warning("Email service not configured; skipping digest send")
         return False
-    # Refresh latest signals by running pipeline for monitored symbols
+    # Refresh latest signals by running pipeline for monitored symbols (only for open markets)
     symbols = _get_symbols_to_monitor()
     for sid, ticker, exchange in symbols:
         try:
-            job_sma_pipeline(sid, ticker, exchange)
+            # Only run pipeline for symbols whose market is open
+            market_open, _, _ = is_market_open(exchange)
+            if market_open:
+                job_sma_pipeline(sid, ticker, exchange)
+                logger.debug(f"Ran SMA pipeline for {ticker} ({exchange}) - market open")
+            else:
+                logger.debug(f"Skipped SMA pipeline for {ticker} ({exchange}) - market closed")
         except Exception as e:
             logger.warning("Pipeline failed for %s: %s", ticker, e)
             continue

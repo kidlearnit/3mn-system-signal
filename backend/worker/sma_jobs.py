@@ -261,30 +261,33 @@ def job_sma_pipeline(symbol_id: int, ticker: str, exchange: str):
                         # Publish to WebSocket
                         publish_sma_signal_to_websocket(symbol_id, ticker, exchange, tf, signal_data)
                         
-                        # Send Telegram alerts ONLY for Confirmed and Triple signals (Email disabled - using digest instead)
-                        if signal_type.value in ['confirmed_bullish', 'confirmed_bearish', 'triple_bullish', 'triple_bearish']:
-                            try:
-                                # Create clean signal data for Telegram
-                                telegram_signal_data = {
-                                    'signal_type': signal_type.value,
-                                    'signal_direction': signal_direction,
-                                    'signal_strength': signal_strength,
-                                    'close': ma_structure['cp'],
-                                    'm1': ma_structure['m1'],
-                                    'm2': ma_structure['m2'],
-                                    'm3': ma_structure['m3'],
-                                    'ma144': ma_structure['ma144'],
-                                    'avg_m1_m2_m3': ma_structure['avg_m1_m2_m3']
-                                }
-                                sma_telegram_service.send_sma_signal(ticker, exchange, tf, telegram_signal_data)
-                                
-                                # Email alerts disabled - using digest instead
-                                # Individual emails are now sent via email digest every 10 minutes
-                                debug_helper.log_step(f"Sent SMA Telegram alert for {ticker} {tf} - {signal_type.value} (email via digest)")
-                            except Exception as tg_error:
-                                debug_helper.log_step(f"Error sending SMA Telegram alert for {ticker} {tf}", error=tg_error)
-                        else:
-                            debug_helper.log_step(f"Skipping Telegram alert for {ticker} {tf} - {signal_type.value} (not confirmed signal)")
+                        # Send Telegram alerts ONLY for Confirmed and Triple signals (DISABLED - using digest instead)
+                        # if signal_type.value in ['confirmed_bullish', 'confirmed_bearish', 'triple_bullish', 'triple_bearish']:
+                        #     try:
+                        #         # Create clean signal data for Telegram
+                        #         telegram_signal_data = {
+                        #             'signal_type': signal_type.value,
+                        #             'signal_direction': signal_direction,
+                        #             'signal_strength': signal_strength,
+                        #             'close': ma_structure['cp'],
+                        #             'm1': ma_structure['m1'],
+                        #             'm2': ma_structure['m2'],
+                        #             'm3': ma_structure['m3'],
+                        #             'ma144': ma_structure['ma144'],
+                        #             'avg_m1_m2_m3': ma_structure['avg_m1_m2_m3']
+                        #         }
+                        #         sma_telegram_service.send_sma_signal(ticker, exchange, tf, telegram_signal_data)
+                        #         
+                        #         # Email alerts disabled - using digest instead
+                        #         # Individual emails are now sent via email digest every 10 minutes
+                        #         debug_helper.log_step(f"Sent SMA Telegram alert for {ticker} {tf} - {signal_type.value} (email via digest)")
+                        #     except Exception as tg_error:
+                        #         debug_helper.log_step(f"Error sending SMA Telegram alert for {ticker} {tf}", error=tg_error)
+                        # else:
+                        #     debug_helper.log_step(f"Skipping Telegram alert for {ticker} {tf} - {signal_type.value} (not confirmed signal)")
+                        
+                        # All Telegram alerts now sent via digest every 5 minutes
+                        debug_helper.log_step(f"Telegram alert for {ticker} {tf} - {signal_type.value} (sent via digest)")
                         
                         debug_helper.log_step(f"Processed multi-timeframe signal for {tf} {ticker}: {signal_type.value} ({signal_direction})")
                 

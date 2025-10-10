@@ -682,7 +682,15 @@ def tg_send_zone_alert(symbol, alert_type, zone, price, macd, confidence="medium
     
     message += f"\n<b>🎯 Zone:</b> {zone_icon} {zone.upper()}\n"
     message += f"<b>🎯 Confidence:</b> {confidence_icon} {confidence.upper()}\n"
-    message += f"<b>💰 Price:</b> ${price:.2f}\n"
+    # Determine currency based on symbol
+    is_vn_stock = symbol.endswith(('VN', 'VNM', 'VCB', 'VIC', 'VHM', 'VJC', 'VRE', 'VPI', 'VPB', 'VSH', 'VTO', 'VHC', 'VND', 'VOS', 'VSC', 'VSI', 'VTB', 'VTV', 'VWS', 'VXF', 'VYS', 'VZB', 'VZC', 'VZD', 'VZE', 'VZF', 'VZG', 'VZH', 'VZI', 'TPB', 'VGC'))
+    if is_vn_stock:
+        currency = "₫"
+        price_display = price * 1000  # Convert to VND (multiply by 1000)
+    else:
+        currency = "$"
+        price_display = price
+    message += f"<b>💰 Price:</b> {currency}{price_display:.0f}\n"
     message += f"<b>📈 MACD:</b> {macd:.3f}\n"
     message += f"<b>⏰ Time:</b> {pd.Timestamp.now(tz='Asia/Ho_Chi_Minh').strftime('%H:%M:%S %d/%m/%Y')}\n\n"
     message += "<i>⚠️ Zone alert - Chỉ là cảnh báo tham khảo</i>"
