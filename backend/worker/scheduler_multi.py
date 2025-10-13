@@ -5,12 +5,10 @@ from rq import Queue
 from sqlalchemy import text
 
 from worker.jobs import job_backfill_symbol
-from worker.jobs_refactored import job_realtime_pipeline_refactored
+# from worker.jobs_refactored import job_realtime_pipeline
 from worker.worker_us_macd import job_realtime_pipeline_with_macd as job_realtime_pipeline_us_macd
 from worker.worker_vn_macd import job_realtime_pipeline_with_macd as job_realtime_pipeline_vn_macd
 from worker.sma_jobs import job_sma_backfill
-from worker.backfill_batch import job_backfill_batch
-from worker.sma_email_digest import run_once as email_digest_run_once
 from utils.market_time import is_market_open
 from app.db import  init_db
 # 🔹 Khởi tạo DB
@@ -389,12 +387,7 @@ def loop():
                 if added:
                     print(f"🔄 [Scheduler] Synced {added} symbols from workflow into DB")
 
-            # Backfill batch for configured digest symbols (once at startup)
-            try:
-                if not processed_symbols:
-                    job_backfill_batch()
-            except Exception:
-                pass
+            # Backfill batch removed: handled by external tooling or manual ops
 
             # Kiểm tra và backfill symbol mới
             new_count = check_and_backfill_new_symbols()
@@ -430,14 +423,14 @@ def loop():
                     if exch in VN_EXCHANGES:
                         if is_market_open(exch):
                             job_id = f"rt:{sid}:{tck}:vn"
-                            q_vn.enqueue(job_realtime_pipeline_refactored, sid, tck, exch, 1, job_timeout=300, job_id=job_id, failure_ttl=60)
+                            q_vn.enqueue(job_realtime_pipeline, sid, tck, exch, 1, job_timeout=300, job_id=job_id, failure_ttl=60)
                             # Stagger to spread load
                             if STAGGER_SECS > 0:
                                 import time as _t
                                 _t.sleep(STAGGER_SECS)
                     elif exch in US_EXCHANGES:
                         job_id = f"rt:{sid}:{tck}:us"
-                        q_us.enqueue(job_realtime_pipeline_refactored, sid, tck, exch, 1, job_timeout=300, job_id=job_id, failure_ttl=60)
+                        q_us.enqueue(job_realtime_pipeline, sid, tck, exch, 1, job_timeout=300, job_id=job_id, failure_ttl=60)
                         if STAGGER_SECS > 0:
                             import time as _t
                             _t.sleep(STAGGER_SECS)
@@ -457,11 +450,7 @@ def loop():
         if macd_multi_active:
             print("🔄 MACD Multi-TF workflows active - logic integrated into worker_us/worker_vn")
 
-        # Send SMA email digest every 5 minutes (only when market open)
-        try:
-            email_digest_run_once()
-        except Exception:
-            pass
+        # Email digest execution removed: handled by dedicated emailer service
 
         time.sleep(60)
 

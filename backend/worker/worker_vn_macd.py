@@ -8,7 +8,7 @@ init_db(os.getenv("DATABASE_URL"))
 
 from app.db import SessionLocal
 from worker.jobs import job_realtime_pipeline
-from worker.jobs_refactored import job_realtime_pipeline_refactored
+# from worker.jobs_refactored import job_realtime_pipeline
 from app.services.data_sources import fetch_latest_1m
 from app.services.candle_utils import load_candles_1m_df
 from app.services.resample import resample_ohlcv
@@ -48,11 +48,11 @@ class VNMacdWorker(BaseRQWorker):
                 debug_helper.log_step(f"Fetched {count} new 1m candles for {symbol}")
 
                 # Temporarily use regular realtime pipeline for signal evaluation
-                return job_realtime_pipeline_refactored(symbol_id, symbol, exchange, strategy_id=1, force_run=True)
+                return job_realtime_pipeline(symbol_id, symbol, exchange, strategy_id=1, force_run=True)
             else:
                 # Fall back to regular realtime pipeline
                 debug_helper.log_step(f"No MACD config for {symbol}, running regular pipeline")
-                return job_realtime_pipeline_refactored(symbol_id, symbol, exchange, strategy_id=1, force_run=True)
+                return job_realtime_pipeline(symbol_id, symbol, exchange, strategy_id=1, force_run=True)
 
         except Exception as e:
             debug_helper.log_step(f"Error in enhanced realtime pipeline for {symbol}", error=e)

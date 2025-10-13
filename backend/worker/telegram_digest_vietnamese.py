@@ -9,6 +9,13 @@ import time
 import logging
 from datetime import datetime, timezone
 import requests
+from datetime import timedelta
+from zoneinfo import ZoneInfo
+from typing import List, Dict
+
+# Add app to path for DB access
+sys.path.append('/app')
+from app.db import SessionLocal, init_db  # type: ignore
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +26,12 @@ class VietnameseTelegramDigest:
         self.tg_token = os.getenv('TG_TOKEN')
         self.tg_chat_id = os.getenv('TG_CHAT_ID')
         self.interval = int(os.getenv('TELEGRAM_DIGEST_INTERVAL_SECONDS', '300'))  # 5 minutes
+        self.tz_vn = ZoneInfo("Asia/Ho_Chi_Minh")
+        # Ensure DB is initialized
+        try:
+            init_db(os.getenv("DATABASE_URL"))
+        except Exception as e:
+            logger.warning(f"Could not init DB: {e}")
         
         logger.info(f"Vietnamese Telegram Digest initialized")
         logger.info(f"TG_TOKEN: {self.tg_token[:20] if self.tg_token else 'NOT_SET'}...")
@@ -29,16 +42,45 @@ class VietnameseTelegramDigest:
         """Check if Telegram is configured"""
         return bool(self.tg_token and self.tg_chat_id)
     
+    def _is_vn_market_open(self) -> bool:
+        """Check if Vietnam market is open using local rules.
+        Sessions (Mon-Fri): 09:00-11:30 and 13:00-15:00 ICT (Ho Chi Minh time).
+        """
+        try:
+            # Prefer shared utility if available
+            from backend.utils.market_time import is_market_open  # type: ignore
+            return bool(is_market_open("VN"))
+        except Exception:
+            # Fallback local check
+            now = datetime.now(self.tz_vn)
+            if now.weekday() >= 5:  # 5=Sat, 6=Sun
+                return False
+            t = now.time()
+            morning_open = now.replace(hour=9, minute=0, second=0, microsecond=0).time()
+            morning_close = now.replace(hour=11, minute=30, second=0, microsecond=0).time()
+            afternoon_open = now.replace(hour=13, minute=0, second=0, microsecond=0).time()
+            afternoon_close = now.replace(hour=15, minute=0, second=0, microsecond=0).time()
+            in_morning = morning_open <= t <= morning_close
+            in_afternoon = afternoon_open <= t <= afternoon_close
+            return in_morning or in_afternoon
+    
     def send_vietnamese_message(self) -> bool:
         """Send Vietnamese message with trend prediction"""
         if not self.is_configured():
             logger.warning("Telegram not configured")
             return False
         
+        # Gate by VN market hours
+        if not self._is_vn_market_open():
+            logger.info("VN market closed, skipping Vietnamese Telegram digest")
+            return False
+        
         try:
-            # Generate sample data with Vietnamese analysis
-            symbols_data = self._generate_vietnamese_sample_data()
-            
+            # Collect realtime data from DB
+            symbols_data = self._get_realtime_vn_signals()
+            if not symbols_data:
+                logger.info("No realtime VN signals available; skipping send")
+                return False
             message = self._format_vietnamese_message(symbols_data)
             success = self._send_telegram_message(message)
             return success
@@ -47,53 +89,101 @@ class VietnameseTelegramDigest:
             logger.error(f"Error sending Vietnamese message: {e}")
             return False
     
-    def _generate_vietnamese_sample_data(self) -> list:
-        """Generate sample data with Vietnamese trend analysis"""
-        import random
-        
-        symbols = [
-            'TPB', 'VCB', 'VGC', 'VHM', 'VIC', 'VJC', 'VNM', 'VRE', 'VPI', 'VPB',
-            'VSH', 'VTO', 'VHC', 'VND', 'VOS', 'VSC', 'VSI', 'VTB', 'VTV', 'VWS',
-            'VXF', 'VYS', 'VZB', 'VZC', 'VZD', 'VZE', 'VZF', 'VZG', 'VZH', 'VZI'
-        ]
-        
-        companies = [
-            'Ngân hàng Tiên Phong', 'Ngân hàng TMCP Ngoại thương', 'Ngân hàng TMCP Công thương', 
-            'Vinhomes', 'Tập đoàn Vingroup', 'VietJet Air', 'Công ty Cổ phần Sữa Việt Nam',
-            'Vinhomes Retail', 'Tổng Công ty Dầu khí Việt Nam', 'Ngân hàng TMCP Việt Nam Thịnh vượng',
-            'Vincom Retail', 'Tập đoàn Công nghiệp Viễn thông Quân đội', 'Vinhomes Healthcare',
-            'Công ty Cổ phần Chứng khoán VNDirect', 'VOS', 'VSC', 'VSI', 'VTB', 'VTV', 'VWS',
-            'VXF', 'VYS', 'VZB', 'VZC', 'VZD', 'VZE', 'VZF', 'VZG', 'VZH', 'VZI'
-        ]
-        
-        # Better distribution of signals
-        signal_distribution = ['CONFIRMED'] * 8 + ['BULLISH'] * 10 + ['BEARISH'] * 8 + ['NEUTRAL'] * 4
-        risk_distribution = ['LOW'] * 15 + ['MED'] * 10 + ['HIGH'] * 5
-        
-        data = []
-        for i, (symbol, company) in enumerate(zip(symbols, companies)):
-            signal = random.choice(signal_distribution)
-            risk = random.choice(risk_distribution)
-            conf = round(random.uniform(5.0, 9.5), 1)
-            rr = round(random.uniform(1.2, 3.0), 1)
-            price = round(random.uniform(10.0, 100.0), 2)
-            change = round(random.uniform(-5.0, 5.0), 2)
-            
-            # Generate Vietnamese trend analysis
-            trend_analysis = self._generate_vietnamese_trend_analysis(signal, conf, risk, change)
-            
-            data.append({
-                'symbol': symbol,
-                'company': company,
-                'signal': signal,
-                'confidence': conf,
-                'risk': risk,
-                'rr_ratio': rr,
-                'price': price,
-                'change': change,
-                'trend_analysis': trend_analysis
-            })
-        
+    def _get_symbols_vn(self) -> List[str]:
+        symbols_env = os.getenv('EMAIL_DIGEST_SYMBOLS', '')
+        if symbols_env:
+            # Filter to VN tickers by checking presence in DB with VN exchange
+            with SessionLocal() as db:
+                env_syms = [s.strip() for s in symbols_env.split(',') if s.strip()]
+                rows = db.execute(
+                    "SELECT ticker FROM symbols WHERE ticker IN %s AND exchange = 'VN' AND active = 1",
+                    (tuple(env_syms),)
+                ).fetchall()
+                return [r[0] for r in rows][:30]
+        # Fallback: top active VN symbols
+        with SessionLocal() as db:
+            rows = db.execute(
+                "SELECT ticker FROM symbols WHERE exchange='VN' AND active=1 ORDER BY weight DESC, id ASC LIMIT 30"
+            ).fetchall()
+            return [r[0] for r in rows]
+
+    def _get_realtime_vn_signals(self) -> List[Dict]:
+        """Fetch latest VN signals and map to digest rows."""
+        timeframes = ('1m','2m','5m','15m','30m','1h','4h')
+        data: List[Dict] = []
+        symbols = self._get_symbols_vn()
+        if not symbols:
+            return data
+        with SessionLocal() as db:
+            for ticker in symbols:
+                # Get symbol info
+                row = db.execute(
+                    "SELECT id, ticker, company_name FROM symbols WHERE ticker=%s AND exchange='VN' AND active=1",
+                    (ticker,)
+                ).fetchone()
+                if not row:
+                    continue
+                symbol_id, symbol, company = row
+                # Latest price and change from candles_1m
+                price_row = db.execute(
+                    """
+                    SELECT c1.close as price,
+                           (c1.close - c2.close)/NULLIF(c2.close,0)*100 as change_pct
+                    FROM candles_1m c1
+                    LEFT JOIN candles_1m c2 ON c2.symbol_id=c1.symbol_id AND c2.ts=(
+                        SELECT MAX(ts) FROM candles_1m WHERE symbol_id=c1.symbol_id AND ts < c1.ts
+                    )
+                    WHERE c1.symbol_id=%s
+                    ORDER BY c1.ts DESC
+                    LIMIT 1
+                    """,
+                    (symbol_id,)
+                ).fetchone()
+                price = float(price_row[0]) if price_row and price_row[0] is not None else 0.0
+                change = float(price_row[1]) if price_row and price_row[1] is not None else 0.0
+                # Latest signals from sma_signals
+                sig_rows = db.execute(
+                    """
+                    SELECT timeframe, signal_type, confidence, signal_strength, risk_level, rr_ratio, created_at
+                    FROM sma_signals
+                    WHERE symbol_id=%s AND timeframe IN %s
+                      AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                    ORDER BY created_at DESC
+                    LIMIT 6
+                    """,
+                    (symbol_id, timeframes)
+                ).fetchall()
+                if not sig_rows:
+                    continue
+                # Pick best signal by confidence then strength
+                best = sorted(sig_rows, key=lambda r: ((r[2] or 0), (r[3] or 0)), reverse=True)[0]
+                tf, sig_type, conf, strength, risk_level, rr_ratio, _ = best
+                # Map to Vietnamese categories
+                if sig_type in ("BUY","STRONG_BUY","CONFIRMED_BUY"):
+                    signal_label = "CONFIRMED" if (conf or 0) >= 0.7 else "BULLISH"
+                elif sig_type in ("SELL","STRONG_SELL","CONFIRMED_SELL"):
+                    signal_label = "BEARISH"
+                else:
+                    signal_label = "NEUTRAL"
+                # Confidence scaled to 10
+                conf10 = round(float(conf or 0) * 10, 1)
+                risk_map = {
+                    'low': 'LOW', 'medium': 'MED', 'med': 'MED', 'high': 'HIGH'
+                }
+                risk = risk_map.get(str(risk_level or '').lower(), 'MED')
+                rr = float(rr_ratio or 1.5)
+                trend_analysis = self._generate_vietnamese_trend_analysis(signal_label, conf10, risk, change)
+                data.append({
+                    'symbol': symbol,
+                    'company': company or symbol,
+                    'signal': signal_label,
+                    'confidence': conf10,
+                    'risk': risk,
+                    'rr_ratio': rr,
+                    'price': price,
+                    'change': change,
+                    'trend_analysis': trend_analysis
+                })
         return data
     
     def _generate_vietnamese_trend_analysis(self, signal, confidence, risk, change) -> dict:
@@ -156,6 +246,8 @@ class VietnameseTelegramDigest:
     
     def _get_confidence_level_vietnamese(self, confidence):
         """Get confidence level in Vietnamese"""
+        if confidence is None:
+            return "THẤP"
         if confidence > 8.0:
             return "RẤT CAO"
         elif confidence > 6.0:
@@ -187,11 +279,13 @@ class VietnameseTelegramDigest:
         if confirmed_signals:
             message += "🟢 *TÍN HIỆU XÁC NHẬN* (Mua/Bán Mạnh)\n"
             for i, data in enumerate(confirmed_signals[:5], 1):
-                analysis = data['trend_analysis']
+                analysis = data.get('trend_analysis', {})
+                if not analysis:
+                    continue
                 risk_emoji = "🟢" if data['risk'] == 'LOW' else "🟡" if data['risk'] == 'MED' else "🔴"
                 
                 message += f"*{i}. {data['symbol']} - {data['company']}*\n"
-                message += f"📈 Xu hướng: {analysis['trend_prediction']}\n"
+                message += f"📈 Xu hướng: {analysis.get('trend_prediction', 'N/A')}\n"
                 # Determine currency based on symbol
                 is_vn_stock = data['symbol'].endswith(('VN', 'VNM', 'VCB', 'VIC', 'VHM', 'VJC', 'VRE', 'VPI', 'VPB', 'VSH', 'VTO', 'VHC', 'VND', 'VOS', 'VSC', 'VSI', 'VTB', 'VTV', 'VWS', 'VXF', 'VYS', 'VZB', 'VZC', 'VZD', 'VZE', 'VZF', 'VZG', 'VZH', 'VZI', 'TPB', 'VGC'))
                 if is_vn_stock:
@@ -200,21 +294,23 @@ class VietnameseTelegramDigest:
                 else:
                     currency = "$"
                     price_display = data['price']
-                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis['risk_assessment']}\n"
-                message += f"📊 Độ tin cậy: {analysis['confidence_level']} ({data['confidence']:.1f}/10)\n"
-                message += f"⏰ Thời gian: {analysis['time_horizon']}\n"
-                message += f"💡 Lý do: {analysis['trend_explanation']}\n"
-                message += f"⚠️ Rủi ro: {analysis['risk_explanation']}\n\n"
+                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis.get('risk_assessment', 'N/A')}\n"
+                message += f"📊 Độ tin cậy: {analysis.get('confidence_level', 'N/A')} ({data['confidence']:.1f}/10)\n"
+                message += f"⏰ Thời gian: {analysis.get('time_horizon', 'N/A')}\n"
+                message += f"💡 Lý do: {analysis.get('trend_explanation', 'N/A')}\n"
+                message += f"⚠️ Rủi ro: {analysis.get('risk_explanation', 'N/A')}\n\n"
         
         # BULLISH SIGNALS
         if bullish_signals:
             message += "🟡 *TÍN HIỆU TĂNG* (Cơ hội Mua)\n"
             for i, data in enumerate(bullish_signals[:5], 1):
-                analysis = data['trend_analysis']
+                analysis = data.get('trend_analysis', {})
+                if not analysis:
+                    continue
                 risk_emoji = "🟢" if data['risk'] == 'LOW' else "🟡" if data['risk'] == 'MED' else "🔴"
                 
                 message += f"*{i}. {data['symbol']} - {data['company']}*\n"
-                message += f"📈 Xu hướng: {analysis['trend_prediction']}\n"
+                message += f"📈 Xu hướng: {analysis.get('trend_prediction', 'N/A')}\n"
                 # Determine currency based on symbol
                 is_vn_stock = data['symbol'].endswith(('VN', 'VNM', 'VCB', 'VIC', 'VHM', 'VJC', 'VRE', 'VPI', 'VPB', 'VSH', 'VTO', 'VHC', 'VND', 'VOS', 'VSC', 'VSI', 'VTB', 'VTV', 'VWS', 'VXF', 'VYS', 'VZB', 'VZC', 'VZD', 'VZE', 'VZF', 'VZG', 'VZH', 'VZI', 'TPB', 'VGC'))
                 if is_vn_stock:
@@ -223,19 +319,21 @@ class VietnameseTelegramDigest:
                 else:
                     currency = "$"
                     price_display = data['price']
-                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis['risk_assessment']}\n"
-                message += f"📊 Độ tin cậy: {analysis['confidence_level']} ({data['confidence']:.1f}/10)\n"
-                message += f"💡 Lý do: {analysis['trend_explanation']}\n\n"
+                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis.get('risk_assessment', 'N/A')}\n"
+                message += f"📊 Độ tin cậy: {analysis.get('confidence_level', 'N/A')} ({data['confidence']:.1f}/10)\n"
+                message += f"💡 Lý do: {analysis.get('trend_explanation', 'N/A')}\n\n"
         
         # BEARISH SIGNALS
         if bearish_signals:
             message += "🔴 *TÍN HIỆU GIẢM* (Cơ hội Bán)\n"
             for i, data in enumerate(bearish_signals[:5], 1):
-                analysis = data['trend_analysis']
+                analysis = data.get('trend_analysis', {})
+                if not analysis:
+                    continue
                 risk_emoji = "🟢" if data['risk'] == 'LOW' else "🟡" if data['risk'] == 'MED' else "🔴"
                 
                 message += f"*{i}. {data['symbol']} - {data['company']}*\n"
-                message += f"📈 Xu hướng: {analysis['trend_prediction']}\n"
+                message += f"📈 Xu hướng: {analysis.get('trend_prediction', 'N/A')}\n"
                 # Determine currency based on symbol
                 is_vn_stock = data['symbol'].endswith(('VN', 'VNM', 'VCB', 'VIC', 'VHM', 'VJC', 'VRE', 'VPI', 'VPB', 'VSH', 'VTO', 'VHC', 'VND', 'VOS', 'VSC', 'VSI', 'VTB', 'VTV', 'VWS', 'VXF', 'VYS', 'VZB', 'VZC', 'VZD', 'VZE', 'VZF', 'VZG', 'VZH', 'VZI', 'TPB', 'VGC'))
                 if is_vn_stock:
@@ -244,19 +342,21 @@ class VietnameseTelegramDigest:
                 else:
                     currency = "$"
                     price_display = data['price']
-                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis['risk_assessment']}\n"
-                message += f"📊 Độ tin cậy: {analysis['confidence_level']} ({data['confidence']:.1f}/10)\n"
-                message += f"💡 Lý do: {analysis['trend_explanation']}\n\n"
+                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis.get('risk_assessment', 'N/A')}\n"
+                message += f"📊 Độ tin cậy: {analysis.get('confidence_level', 'N/A')} ({data['confidence']:.1f}/10)\n"
+                message += f"💡 Lý do: {analysis.get('trend_explanation', 'N/A')}\n\n"
         
         # NEUTRAL SIGNALS (Only show top 3)
         if neutral_signals:
             message += "⚪ *TÍN HIỆU TRUNG TÍNH* (Giữ Vị thế)\n"
             for i, data in enumerate(neutral_signals[:3], 1):
-                analysis = data['trend_analysis']
+                analysis = data.get('trend_analysis', {})
+                if not analysis:
+                    continue
                 risk_emoji = "🟢" if data['risk'] == 'LOW' else "🟡" if data['risk'] == 'MED' else "🔴"
                 
                 message += f"*{i}. {data['symbol']} - {data['company']}*\n"
-                message += f"📈 Xu hướng: {analysis['trend_prediction']}\n"
+                message += f"📈 Xu hướng: {analysis.get('trend_prediction', 'N/A')}\n"
                 # Determine currency based on symbol
                 is_vn_stock = data['symbol'].endswith(('VN', 'VNM', 'VCB', 'VIC', 'VHM', 'VJC', 'VRE', 'VPI', 'VPB', 'VSH', 'VTO', 'VHC', 'VND', 'VOS', 'VSC', 'VSI', 'VTB', 'VTV', 'VWS', 'VXF', 'VYS', 'VZB', 'VZC', 'VZD', 'VZE', 'VZF', 'VZG', 'VZH', 'VZI', 'TPB', 'VGC'))
                 if is_vn_stock:
@@ -265,8 +365,8 @@ class VietnameseTelegramDigest:
                 else:
                     currency = "$"
                     price_display = data['price']
-                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis['risk_assessment']}\n"
-                message += f"💡 Lý do: {analysis['trend_explanation']}\n\n"
+                message += f"💰 Giá: {currency}{price_display:.0f} ({data['change']:+.2f}%) | {risk_emoji} {analysis.get('risk_assessment', 'N/A')}\n"
+                message += f"💡 Lý do: {analysis.get('trend_explanation', 'N/A')}\n\n"
         
         # Summary
         message += "📊 *TỔNG KẾT:*\n"
