@@ -36,7 +36,7 @@ services:
       mysql:
         condition: service_healthy
     volumes:
-      - ./backend:/code
+      - ./:/code
       - ./config:/code/config
     working_dir: /code
     restart: "no" # Chỉ chạy một lần
@@ -48,8 +48,10 @@ services:
 
   web:
     build: .
-    command: bash -lc "pip install -r requirements.txt && python -m flask --app init run --host=0.0.0.0 --port=5000"
+    command: bash -lc "python -m flask --app app:create_app run --host=0.0.0.0 --port=5000"
     environment:
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=web
       - PYTHONPATH=/code
       - FLASK_ENV=production
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
@@ -80,15 +82,16 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
       - ./config:/code/config
     working_dir: /code
 
   worker:
     build: .
-    command: bash -lc "pip install -r requirements.txt && python worker/run_worker.py"
+    command: bash -lc "python /code/worker/run_worker.py"
     environment:
-      - PYTHONPATH=/code
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=worker
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER}
@@ -126,15 +129,16 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
       - ./config:/code/config
     working_dir: /code
 
   scheduler:
     build: .
-    command: python worker/scheduler_multi.py
+    command: bash -lc "cd /code && python worker/scheduler_multi.py"
     environment:
-      - PYTHONPATH=/code
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=scheduler
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER}
@@ -157,14 +161,15 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
     working_dir: /code
 
   worker_vn:
     build: .
-    command: python worker/worker_vn_macd.py
+    command: bash -lc "cd /code && python worker/worker_vn_macd.py"
     environment:
-      - PYTHONPATH=/code
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=worker_vn
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER}
@@ -189,13 +194,14 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
     working_dir: /code
   worker_us:
     build: .
-    command: python worker/worker_us_macd.py
+    command: bash -lc "cd /code && python worker/worker_us_macd.py"
     environment:
-      - PYTHONPATH=/code
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=worker_us
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER}
@@ -220,7 +226,7 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
     working_dir: /code
 
   worker_backfill:
@@ -247,14 +253,15 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
     working_dir: /code
 
   emailer:
     build: .
-    command: python worker/enhanced_email_digest.py
+    command: bash -lc "cd /code && python worker/enhanced_email_digest.py"
     environment:
-      - PYTHONPATH=/code
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=emailer
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER}
@@ -274,14 +281,15 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
     working_dir: /code
 
   telegram_digest:
     build: .
     command: python worker/telegram_digest_vietnamese.py
     environment:
-      - PYTHONPATH=/code
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=telegram
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER}
@@ -302,19 +310,8 @@ services:
       redis:
         condition: service_started
     volumes:
-      - ./backend:/code
+      - ./:/code
     working_dir: /code
-
-  frontend:
-    image: nginx:alpine
-    ports:
-      - "3001:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-    depends_on:
-      - web
-    restart: unless-stopped
 
 volumes:
   mysql_data:

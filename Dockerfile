@@ -12,14 +12,14 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /code
 
 # 4. Copy requirements và cài đặt Python packages
-COPY backend/requirements.txt .
+COPY requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 5. Copy backend code vào container
-COPY backend/ .
+COPY . .
 
 # 6. Biến môi trường chung
 ENV PYTHONUNBUFFERED=1
 
 # 7. Lệnh mặc định (cho service web)
-CMD ["python", "-m", "flask", "--app", "app", "run", "--host=0.0.0.0", "--port=5000"]
+CMD ["python", "-m", "flask", "--app", "app.init", "run", "--host=0.0.0.0", "--port=5000"]
