@@ -19,4 +19,5 @@ python-dateutil==2.8.2
 pytz==2023.3
 lunardate==0.2.2
 PyYAML
+APScheduler==3.10.4
 

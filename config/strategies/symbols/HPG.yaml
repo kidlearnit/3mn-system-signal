@@ -1,0 +1,49 @@
+version: 1.0
+last_updated: '2025-01-27'
+symbol: HPG
+company: Hoa Phat Group
+weight: 1.0
+sector: Steel
+market: VN
+indicators:
+  macd:
+    params:
+      fast: 7
+      slow: 113
+      signal: 144
+    thresholds:
+      1m:
+        bull: 0.21
+        bear: -0.21
+      2m:
+        bull: 0.35
+        bear: -0.35
+      5m:
+        bull: 0.50
+        bear: -0.50
+      15m:
+        bull: 0.70
+        bear: -0.70
+      30m:
+        bull: 1.05
+        bear: -1.05
+      1h:
+        bull: 1.40
+        bear: -1.40
+      4h:
+        bull: 2.10
+        bear: -2.10
+  sma:
+    params:
+      m1: 18
+      m2: 36
+      m3: 48
+      ma144: 144
+    timeframes:
+      - 1m
+      - 2m
+      - 5m
+      - 15m
+      - 30m
+      - 1h
+      - 4h

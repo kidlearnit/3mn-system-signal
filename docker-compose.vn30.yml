@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  # VN30 Realtime Monitor Service
+  vn30_monitor:
+    build: .
+    command: python vn30_realtime_monitor.py
+    environment:
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=vn30_monitor
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./:/code
+      - ./config:/code/config:ro
+      - ./logs:/code/logs
+    working_dir: /code
+    healthcheck:
+      test: [ "CMD", "python", "-c", "from vn30_realtime_monitor import VN30RealtimeMonitor; print('OK')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+  # (Optional) Backfill service có thể bổ sung sau nếu cần

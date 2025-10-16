@@ -1,0 +1,390 @@
+{
+  "project_name": "3mn-trading-signals",
+  "architecture": "modular",
+  "migration_status": "in_progress",
+  "structure": {
+    "app": {
+      "type": "legacy",
+      "status": "deprecated",
+      "description": "Legacy Flask application (monolithic)",
+      "components": {
+        "__init__.py": {
+          "type": "flask_app_factory",
+          "purpose": "Flask application initialization"
+        },
+        "config.py": {
+          "type": "configuration",
+          "purpose": "Application configuration"
+        },
+        "db.py": {
+          "type": "database",
+          "purpose": "Database connection and session management"
+        },
+        "models.py": {
+          "type": "data_models",
+          "purpose": "SQLAlchemy models for database tables"
+        },
+        "routes": {
+          "type": "api_endpoints",
+          "status": "legacy",
+          "purpose": "REST API endpoints",
+          "files": [
+            "admin.py",
+            "candles.py", 
+            "dashboard.py",
+            "indicators.py",
+            "signals.py",
+            "strategies.py",
+            "symbols.py",
+            "websocket_api.py",
+            "workflow_api.py"
+          ]
+        },
+        "services": {
+          "type": "business_logic",
+          "status": "legacy",
+          "purpose": "Business logic and data processing",
+          "files": [
+            "data_sources.py",
+            "signal_engine.py",
+            "indicators.py",
+            "strategy_*.py",
+            "notify.py",
+            "system_monitor.py"
+          ]
+        },
+        "static": {
+          "type": "web_assets",
+          "purpose": "CSS, JavaScript, and static files"
+        },
+        "templates": {
+          "type": "html_templates",
+          "purpose": "HTML templates for web interface"
+        }
+      }
+    },
+    "src": {
+      "type": "new_architecture",
+      "status": "active",
+      "description": "New modular architecture",
+      "components": {
+        "api": {
+          "type": "api_layer",
+          "purpose": "API endpoints and middleware",
+          "subcomponents": {
+            "routes": {
+              "type": "api_endpoints",
+              "status": "new",
+              "purpose": "REST API endpoints (new implementation)"
+            },
+            "middleware": {
+              "type": "middleware",
+              "purpose": "Request/response middleware"
+            },
+            "schemas": {
+              "type": "validation",
+              "purpose": "Data validation schemas"
+            }
+          }
+        },
+        "core": {
+          "type": "business_logic",
+          "purpose": "Core business logic and data access",
+          "subcomponents": {
+            "data": {
+              "type": "data_access",
+              "purpose": "Data access layer with repository pattern",
+              "files": [
+                "base_repository.py",
+                "market_data_repository.py",
+                "signal_repository.py",
+                "strategy_repository.py"
+              ]
+            },
+            "signals": {
+              "type": "signal_processing",
+              "purpose": "Signal processing pipeline",
+              "files": [
+                "data_fetch_step.py",
+                "indicator_calculation_step.py",
+                "signal_evaluation_step.py"
+              ]
+            },
+            "strategies": {
+              "type": "trading_strategies",
+              "purpose": "Trading strategy implementations",
+              "files": [
+                "base_strategy.py",
+                "macd_strategy.py",
+                "sma_strategy.py"
+              ]
+            },
+            "workflows": {
+              "type": "workflow_engine",
+              "purpose": "Workflow execution engine",
+              "files": [
+                "workflow_engine.py",
+                "workflow_steps.py"
+              ]
+            }
+          }
+        },
+        "web": {
+          "type": "web_interface",
+          "purpose": "Web interface components",
+          "subcomponents": {
+            "templates": {
+              "type": "html_templates",
+              "purpose": "HTML templates"
+            },
+            "static": {
+              "type": "web_assets",
+              "purpose": "CSS, JavaScript, images"
+            },
+            "components": {
+              "type": "ui_components",
+              "purpose": "Reusable UI components"
+            }
+          }
+        },
+        "workers": {
+          "type": "background_workers",
+          "purpose": "Background job processing",
+          "subcomponents": {
+            "observers": {
+              "type": "event_observers",
+              "purpose": "Event handling and notifications"
+            },
+            "processors": {
+              "type": "data_processors",
+              "purpose": "Data processing jobs"
+            },
+            "schedulers": {
+              "type": "job_schedulers",
+              "purpose": "Job scheduling and execution"
+            }
+          }
+        }
+      }
+    },
+    "worker": {
+      "type": "legacy_workers",
+      "status": "deprecated",
+      "description": "Legacy background workers",
+      "components": {
+        "base_worker.py": {
+          "type": "base_class",
+          "purpose": "Base worker class"
+        },
+        "scheduler_multi.py": {
+          "type": "scheduler",
+          "purpose": "Multi-timeframe job scheduler"
+        },
+        "observers": {
+          "type": "event_handlers",
+          "purpose": "Event handling system"
+        },
+        "pipeline": {
+          "type": "data_pipeline",
+          "purpose": "Data processing pipeline"
+        },
+        "repositories": {
+          "type": "data_access",
+          "purpose": "Data access objects"
+        },
+        "strategies": {
+          "type": "trading_strategies",
+          "purpose": "Trading strategy implementations"
+        }
+      }
+    },
+    "config": {
+      "type": "configuration",
+      "purpose": "Configuration files and settings",
+      "components": {
+        "strategies": {
+          "type": "strategy_config",
+          "purpose": "Strategy configuration files"
+        },
+        "symbols": {
+          "type": "symbol_config",
+          "purpose": "Symbol configuration files"
+        },
+        "environments": {
+          "type": "env_config",
+          "purpose": "Environment-specific configurations"
+        }
+      }
+    },
+    "utils": {
+      "type": "shared_utilities",
+      "purpose": "Shared utility functions",
+      "files": [
+        "market_time.py",
+        "value.py"
+      ]
+    },
+    "scripts": {
+      "type": "deployment",
+      "purpose": "Deployment and maintenance scripts",
+      "components": {
+        "deploy": {
+          "type": "deployment_scripts",
+          "purpose": "Deployment automation"
+        },
+        "start": {
+          "type": "startup_scripts",
+          "purpose": "Service startup scripts"
+        },
+        "utils": {
+          "type": "utility_scripts",
+          "purpose": "Utility and maintenance scripts"
+        }
+      }
+    },
+    "tests": {
+      "type": "test_suite",
+      "purpose": "Test files and test data",
+      "components": {
+        "unit": {
+          "type": "unit_tests",
+          "purpose": "Unit test files"
+        },
+        "integration": {
+          "type": "integration_tests",
+          "purpose": "Integration test files"
+        },
+        "e2e": {
+          "type": "e2e_tests",
+          "purpose": "End-to-end test files"
+        }
+      }
+    }
+  },
+  "migration_map": {
+    "app/services/": {
+      "target": "src/core/services/",
+      "status": "completed",
+      "files": [
+        "logger.py",
+        "market_service.py",
+        "system_monitor.py",
+        "notify.py",
+        "email_service.py",
+        "sms_service.py",
+        "candle_utils.py",
+        "resample.py",
+        "indicators.py",
+        "sma_indicators.py",
+        "aggregation_engine.py",
+        "signal_engine.py",
+        "strategy_base.py"
+      ]
+    },
+    "app/routes/": {
+      "target": "src/api/routes/",
+      "status": "planned",
+      "priority": "high"
+    },
+    "app/models.py": {
+      "target": "src/core/data/models/",
+      "status": "planned",
+      "priority": "high"
+    },
+    "worker/": {
+      "target": "src/workers/",
+      "status": "planned",
+      "priority": "medium"
+    }
+  },
+  "patterns": {
+    "repository": {
+      "location": "src/core/data/",
+      "purpose": "Data access abstraction",
+      "base_class": "BaseRepository"
+    },
+    "strategy": {
+      "location": "src/core/strategies/",
+      "purpose": "Trading strategy implementations",
+      "base_class": "BaseStrategy"
+    },
+    "observer": {
+      "location": "src/workers/observers/",
+      "purpose": "Event handling and notifications",
+      "base_class": "BaseObserver"
+    },
+    "service": {
+      "location": "src/core/services/",
+      "purpose": "Business logic services",
+      "naming": "Service suffix"
+    }
+  },
+  "dependencies": {
+    "external": [
+      "Flask",
+      "SQLAlchemy",
+      "pandas",
+      "numpy",
+      "yfinance",
+      "redis",
+      "rq"
+    ],
+    "internal": {
+      "app": {
+        "depends_on": ["src/core/services/"],
+        "status": "legacy"
+      },
+      "src/core": {
+        "depends_on": ["utils/"],
+        "status": "active"
+      },
+      "src/api": {
+        "depends_on": ["src/core/"],
+        "status": "active"
+      },
+      "src/workers": {
+        "depends_on": ["src/core/"],
+        "status": "active"
+      }
+    }
+  },
+  "rules": {
+    "new_code": {
+      "location": "src/",
+      "reason": "New modular architecture"
+    },
+    "legacy_code": {
+      "location": "app/",
+      "reason": "Maintain backward compatibility"
+    },
+    "shared_utilities": {
+      "location": "src/core/",
+      "reason": "Centralized business logic"
+    },
+    "api_endpoints": {
+      "location": "src/api/routes/",
+      "reason": "Separated API layer"
+    },
+    "background_workers": {
+      "location": "src/workers/",
+      "reason": "Modular worker system"
+    }
+  },
+  "anti_patterns": [
+    "code_duplication",
+    "mixed_responsibilities",
+    "hard_coded_dependencies",
+    "circular_imports",
+    "deep_nesting"
+  ],
+  "best_practices": [
+    "single_responsibility_principle",
+    "dependency_injection",
+    "repository_pattern",
+    "observer_pattern",
+    "strategy_pattern",
+    "consistent_naming",
+    "type_hints",
+    "documentation"
+  ]
+}

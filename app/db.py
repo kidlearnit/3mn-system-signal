@@ -11,6 +11,7 @@ def init_db(database_url):
         engine = create_engine(database_url, pool_pre_ping=True, pool_recycle=3600)
         SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
         print(f"Database initialized successfully: {database_url}")
+        print(f"SessionLocal created: {SessionLocal}")
     except Exception as e:
         print(f"Database initialization failed: {e}")
         raise e

@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  market-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.market-monitor
+    container_name: market-signal-monitor
+    restart: unless-stopped
+
+    environment:
+      # Database
+      - DATABASE_URL=${DATABASE_URL}
+
+      # Telegram
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+
+      # Timezone
+      - TZ=Asia/Ho_Chi_Minh
+      - TIMEZONE=Asia/Ho_Chi_Minh
+
+      # Logging
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+
+    volumes:
+      # Mount logs directory
+      - ./logs:/app/logs
+
+      # Mount config directory for easy updates
+      - ./config:/app/config:ro
+
+    networks:
+      - market-monitor-network
+
+    # Health check
+    healthcheck:
+      test: [ "CMD", "python", "-c", "from app.services.market_signal_monitor import market_signal_monitor; print('OK')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+  # Optional: Database service (if not using external database)
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: market-monitor-db
+  #   restart: unless-stopped
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+  #     - MYSQL_DATABASE=${MYSQL_DATABASE}
+  #     - MYSQL_USER=${MYSQL_USER}
+  #     - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #     - ./mysql-init:/docker-entrypoint-initdb.d:ro
+  #   networks:
+  #     - market-monitor-network
+  #   ports:
+  #     - "3306:3306"
+
+networks:
+  market-monitor-network:
+    driver: bridge
+
+# volumes:
+#   mysql_data:

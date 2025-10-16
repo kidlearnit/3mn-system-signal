@@ -284,12 +284,12 @@ services:
       - ./:/code
     working_dir: /code
 
-  telegram_digest:
+  market_monitor:
     build: .
-    command: python worker/telegram_digest_vietnamese.py
+    command: python worker/market_monitor_worker.py
     environment:
       - PYTHONPATH=/code:/code/sitecustomize.py
-      - SERVICE_NAME=telegram
+      - SERVICE_NAME=market_monitor
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER}
@@ -297,13 +297,11 @@ services:
       - MYSQL_DATABASE=${MYSQL_DB}
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=${REDIS_URL}
-      - EMAIL_DIGEST_SYMBOLS=${EMAIL_DIGEST_SYMBOLS}
-      - EMAIL_DIGEST_LIMIT=${EMAIL_DIGEST_LIMIT}
-      - EMAIL_DIGEST_TIMEFRAMES=${EMAIL_DIGEST_TIMEFRAMES}
-      - TELEGRAM_DIGEST_INTERVAL_SECONDS=${TELEGRAM_DIGEST_INTERVAL_SECONDS}
       - TG_TOKEN=${TG_TOKEN}
       - TG_CHAT_ID=${TG_CHAT_ID}
       - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
     depends_on:
       mysql:
         condition: service_healthy
@@ -311,7 +309,77 @@ services:
         condition: service_started
     volumes:
       - ./:/code
+      - ./config:/code/config:ro
+      - ./logs:/code/logs
     working_dir: /code
+    healthcheck:
+      test: [ "CMD", "python", "-c", "from app.services.market_signal_monitor import market_signal_monitor; print('OK')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Dedicated VN30 realtime monitor service
+  vn30_monitor:
+    build: .
+    command: python vn30_realtime_monitor.py
+    environment:
+      - PYTHONPATH=/code:/code/sitecustomize.py
+      - SERVICE_NAME=vn30_monitor
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TG_TOKEN=${TG_TOKEN}
+      - TG_CHAT_ID=${TG_CHAT_ID}
+      - TZ=${TIMEZONE:-Asia/Ho_Chi_Minh}
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./:/code
+      - ./config:/code/config:ro
+      - ./logs:/code/logs
+    working_dir: /code
+    healthcheck:
+      test: [ "CMD", "python", "-c", "from vn30_realtime_monitor import VN30RealtimeMonitor; print('OK')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   mysql_data:

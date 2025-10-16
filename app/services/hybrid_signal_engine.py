@@ -36,6 +36,14 @@ class HybridSignalEngine:
         self.sma_engine = sma_signal_engine
         self.confidence_threshold = 0.6  # 60% confidence để tạo signal
         self.strong_signal_threshold = 0.8  # 80% confidence cho strong signal
+        self._session_local = None
+    
+    def _get_session_local(self):
+        """Lấy SessionLocal, khởi tạo nếu cần"""
+        if self._session_local is None:
+            from ..db import SessionLocal
+            self._session_local = SessionLocal
+        return self._session_local
         
     def evaluate_hybrid_signal(self, symbol_id: int, ticker: str, exchange: str, 
                               timeframe: str) -> Dict[str, Any]:
@@ -93,7 +101,7 @@ class HybridSignalEngine:
     def _get_sma_signal(self, symbol_id: int, timeframe: str) -> Dict[str, Any]:
         """Lấy tín hiệu SMA"""
         try:
-            with SessionLocal() as s:
+            with self._get_session_local()() as s:
                 # Lấy dữ liệu SMA mới nhất
                 row = s.execute(text("""
                     SELECT ts, close, m1, m2, m3, ma144, avg_m1_m2_m3
@@ -135,7 +143,7 @@ class HybridSignalEngine:
     def _get_macd_signal(self, symbol_id: int, timeframe: str) -> Dict[str, Any]:
         """Lấy tín hiệu MACD"""
         try:
-            with SessionLocal() as s:
+            with self._get_session_local()() as s:
                 # Lấy dữ liệu MACD mới nhất
                 row = s.execute(text("""
                     SELECT ts, macd, macd_signal, hist
