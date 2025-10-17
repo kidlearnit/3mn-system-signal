@@ -75,7 +75,16 @@ def resample_ohlcv(df_1m, tf: str, symbol_id: int = None):
     if tf != '1m' and not out.empty:
         tf_minutes = int(tf.replace('m','')) if 'm' in tf else int(tf.replace('h',''))*60
         now_utc = dt.datetime.now(tz=UTC)
-        if (now_utc - out.index[-1]) < dt.timedelta(minutes=tf_minutes):
+        last_candle_time = out.index[-1]
+        time_since_close = now_utc - last_candle_time
+        
+        # Chỉ loại nến nếu:
+        # 1. Thời gian từ đóng nến < 50% khung (trong nửa sau của khung)
+        # 2. Và thời gian delay < 30% khung (để đảm bảo nến thực sự chưa đóng)
+        threshold_incomplete = dt.timedelta(minutes=tf_minutes * 0.5)
+        threshold_delay = dt.timedelta(minutes=tf_minutes * 0.3)
+        
+        if time_since_close < threshold_incomplete and time_since_close < threshold_delay:
             out = out.iloc[:-1]
 
     return out

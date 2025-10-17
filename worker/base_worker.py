@@ -7,7 +7,7 @@ import os
 import logging
 import redis
 from rq import Worker, Queue, Connection
-from logging_config import configure_logging
+from worker.logging_config import configure_logging
 
 
 class BaseRQWorker:

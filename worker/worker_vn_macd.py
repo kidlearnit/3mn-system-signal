@@ -44,11 +44,9 @@ class VNMacdWorker(BaseRQWorker):
             debug_helper.log_step(f"Starting enhanced realtime pipeline for {symbol} ({exchange})")
 
             # Check if market is open
-            market_open, time_to_close, time_to_open = is_market_open(exchange)
+            market_open = is_market_open(exchange)
             if not market_open:
-                debug_helper.log_step(f"Market closed for {symbol} ({exchange}) - skipping", {
-                    'time_to_open': str(time_to_open) if time_to_open else None
-                })
+                debug_helper.log_step(f"Market closed for {symbol} ({exchange}) - skipping")
                 return "market-closed"
 
             # Special handling for VN30 index

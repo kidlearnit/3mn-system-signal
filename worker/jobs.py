@@ -775,9 +775,9 @@ def load_candles_1m_df(symbol_id:int, lookback_minutes:int=None):
         # Allow override via env, default 1440 minutes (~1 day)
         if lookback_minutes is None:
             try:
-                lookback_minutes = int(os.getenv('RT_LOOKBACK_MINUTES', '1440'))
+                lookback_minutes = int(os.getenv('RT_LOOKBACK_MINUTES', '525600'))  # 365 days in minutes
             except Exception:
-                lookback_minutes = 1440
+                lookback_minutes = 525600
         
         # Validate SessionLocal
         if SessionLocal is None:

@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 import logging
 
-from app.db import SessionLocal
+from app.db import init_db, SessionLocal
 from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,10 @@ class VNSignalEngine:
     
     def __init__(self):
         self.config = self._load_yaml_config()
+        # Initialize database if not already done
+        init_db(os.getenv("DATABASE_URL"))
+        # Import SessionLocal after initialization
+        from app.db import SessionLocal
         self.session_local = SessionLocal
     
     def _load_yaml_config(self) -> Dict[str, Any]:
@@ -67,7 +71,7 @@ class VNSignalEngine:
                     'symbol_id': symbol_id,
                     'timeframe': timeframe,
                     'limit': limit
-                })
+                }).fetchall()
                 
                 data = []
                 for row in result:
@@ -102,7 +106,7 @@ class VNSignalEngine:
                 result_1m = s.execute(query_1m, {
                     'symbol_id': symbol_id,
                     'limit': limit_1m
-                })
+                }).fetchall()
                 
                 data_1m = []
                 for row in result_1m:
@@ -136,10 +140,10 @@ class VNSignalEngine:
                 resampled = resampled.reset_index()
                 resampled.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
                 
-                if len(resampled) >= 50:
+                if len(resampled) >= 30:
                     return resampled
                 else:
-                    logger.warning(f"Resampled data insufficient: {len(resampled)} candles (need 50+)")
+                    logger.warning(f"Resampled data insufficient: {len(resampled)} candles (need 30+)")
                     return None
                     
         except Exception as e:
@@ -295,7 +299,7 @@ class VNSignalEngine:
         try:
             # Get historical data
             df = self.get_historical_data(symbol_id, timeframe, 200)
-            if df is None or len(df) < 50:
+            if df is None or len(df) < 30:
                 logger.warning(f"Insufficient data for {ticker} {timeframe}")
                 return {'signal': 'NEUTRAL', 'direction': 'NEUTRAL', 'confidence': 0.0, 'error': 'Insufficient data'}
             

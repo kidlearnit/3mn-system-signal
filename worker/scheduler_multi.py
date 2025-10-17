@@ -320,8 +320,16 @@ def check_and_backfill_new_symbols():
         
         for sid, tck, exch in rows:
             current_symbols.add(sid)
-            if sid not in processed_symbols:
+            # Check if symbol has data in candles_1m table
+            has_data = s.execute(text("""
+                SELECT COUNT(*) FROM candles_1m WHERE symbol_id = :symbol_id LIMIT 1
+            """), {'symbol_id': sid}).scalar()
+            
+            if sid not in processed_symbols and has_data == 0:
                 new_symbols.append((sid, tck, exch))
+            elif has_data > 0:
+                # Symbol has data, add to processed_symbols immediately
+                processed_symbols.add(sid)
         
         # Backfill các symbol mới
         for sid, tck, exch in new_symbols:
@@ -423,7 +431,11 @@ def loop():
                     if exch in VN_EXCHANGES:
                         if is_market_open(exch):
                             job_id = f"rt:{sid}:{tck}:vn"
-                            q_vn.enqueue(job_realtime_pipeline, sid, tck, exch, 1, job_timeout=300, job_id=job_id, failure_ttl=60)
+                            # Use hybrid signal engine for VN30, regular pipeline for others
+                            if tck.upper() == 'VN30':
+                                q_vn.enqueue(job_realtime_pipeline_vn_macd, sid, tck, exch, 1, job_timeout=300, job_id=job_id, failure_ttl=60)
+                            else:
+                                q_vn.enqueue(job_realtime_pipeline, sid, tck, exch, 1, job_timeout=300, job_id=job_id, failure_ttl=60)
                             # Stagger to spread load
                             if STAGGER_SECS > 0:
                                 import time as _t
